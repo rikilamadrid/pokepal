@@ -191,4 +191,41 @@
       transform: none;
     }
   }
+
+  /* Holo foil sweep — the one earned decorative animation (rarity: "holo").
+     Applied to an inset overlay inside an overflow-hidden art panel. */
+  .holo-sweep {
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .holo-sweep::after {
+    content: "";
+    position: absolute;
+    inset: -25%;
+    background: linear-gradient(
+      75deg,
+      transparent 38%,
+      rgba(255, 255, 255, 0.55) 50%,
+      transparent 62%
+    );
+    transform: translateX(-120%);
+    animation: holo-sweep 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+  @keyframes holo-sweep {
+    0%,
+    18% {
+      transform: translateX(-120%);
+    }
+    60%,
+    100% {
+      transform: translateX(120%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .holo-sweep::after {
+      animation: none;
+      transform: none;
+      opacity: 0.22;
+    }
+  }
 }

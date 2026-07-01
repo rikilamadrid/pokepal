@@ -10,9 +10,9 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟢 Phase 2 (Data model & local-first storage layer) complete.** Project sliced
-into 13 phases across four tracks (Core app → PWA milestone → Backend → Native).
-**Up next: Phase 3 (Card & tile component system).**
+**🟢 Phase 3 (Card & tile component system) complete.** Project sliced into 13
+phases across four tracks (Core app → PWA milestone → Backend → Native).
+**Up next: Phase 4 (Navigation & screen transitions).**
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -25,8 +25,8 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | --- | --- | --- | --- | --- |
 | 1 | Core | Foundation — setup, static export, tokens & static shell | `phase-1-foundation-spec.md` | ✅ Done |
 | 2 | Core | Data model & local-first storage layer | `phase-2-data-storage-spec.md` | ✅ Done |
-| 3 | Core | Card & tile component system | `phase-3-card-system-spec.md` | **Up next** |
-| 4 | Core | Navigation & screen transitions | `phase-4-navigation-spec.md` | Not started |
+| 3 | Core | Card & tile component system | `phase-3-card-system-spec.md` | ✅ Done |
+| 4 | Core | Navigation & screen transitions | `phase-4-navigation-spec.md` | **Up next** |
 | 5 | Core | Home screen | `phase-5-home-spec.md` | Not started |
 | 6 | Core | Collection screen | `phase-6-collection-spec.md` | Not started |
 | 7 | Core | Card detail sheet | `phase-7-detail-sheet-spec.md` | Not started |
@@ -37,12 +37,13 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | Not started |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
 
-## Up Next — Phase 3 (Card & tile component system)
+## Up Next — Phase 4 (Navigation & screen transitions)
 
-Build the visual card + tile components that render the phase-2 store: `PokeCard`,
-`CardTile`, type/rarity badges, the duplicate `×N` badge, and the earned holo
-sweep for `rarity: "holo"`. Consumes the type-gradient map and generated art from
-phase 2. Full requirements: @context/features/phase-3-card-system-spec.md
+Wire the phase-1 shell into a working tab router: Home / Collection / Favorites /
+Settings screens with the cross-fade + lift transition, active-tab state, Scan
+opening a modal (not a tab), tap-active-tab-to-scroll-top, and the navbar
+title/border behavior. Full requirements:
+@context/features/phase-4-navigation-spec.md
 
 **Open decision before Phase 11:** confirm the kid-safe sign-in method (magic
 link vs social, parent-assisted) given App Store kids-category rules.
@@ -106,3 +107,19 @@ link vs social, parent-assisted) given App Store kids-category rules.
   Provider mounted in `layout.tsx`. Temporary `StoreProof` panel on Home proves
   persistence/actions (removed in phase 5). `npm run lint` + `npm run build` pass;
   dev server renders 200. **Completed.**
+- **2026-06-30** — Implemented **Phase 3 (Card & tile component system)** on
+  `feature/phase-3-card-system`. Built the presentation layer over a `Card`:
+  `PokeCard` (full gold-framed card — type-gradient art panel with photo/SVG, dex
+  chip, `TypeBadge` + favorite-star overlay, dark name plate with Lilita One name
+  / mono rarity / caught date, and a `×N` gold duplicate badge), `CardTile`
+  (compact grid/row variant — art fill, favorite star, `×N` badge, bottom name
+  plate with `#dex · type`), and `TypeBadge` (gradient pill, mono caps). Added the
+  earned `.holo-sweep` foil animation in `globals.css` (renders only for
+  `rarity: "holo"`, static under `prefers-reduced-motion`) and a `formatCaughtDate`
+  helper (`src/lib/date.ts`, "Today"/"Yesterday"/"Mon D"). Components are
+  data-driven with an optional `onSelect` (detail-sheet wiring deferred to phase 7)
+  and the app-wide `.press` feedback. Verified all types/rarities/favorited/
+  duplicate states via a throwaway `/card-demo` route (removed before merge) and a
+  brief seed-data preview on Home. Removed the temporary phase-2 `StoreProof`
+  surface (Home is back to the display-only placeholder until phase 5).
+  `npm run lint` + `npm run build` pass. **Completed.**
