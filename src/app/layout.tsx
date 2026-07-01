@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Lilita_One, Space_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { CollectionProvider } from "@/hooks/useCollection";
+import { ServiceWorkerRegistrar } from "@/components/pwa/ServiceWorkerRegistrar";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -22,6 +23,15 @@ export const metadata: Metadata = {
   description:
     "Scan your Pokémon cards, explore creatures, and keep track of your collection.",
   applicationName: "PokéPal",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.png", sizes: "48x48", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
   appleWebApp: {
     capable: true,
     title: "PokéPal",
@@ -49,9 +59,13 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Legacy iOS standalone flag — Next emits only the modern
+            `mobile-web-app-capable`, but iOS still reads this one. */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
+        <ServiceWorkerRegistrar />
         <CollectionProvider>{children}</CollectionProvider>
         <Toaster position="top-center" />
       </body>

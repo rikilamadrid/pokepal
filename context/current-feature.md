@@ -10,9 +10,10 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟢 Phase 9 (Favorites & Settings) complete.** Project sliced into 13
-phases across four tracks (Core app → PWA milestone → Backend → Native).
-**Up next: Phase 10 (PWA — installable + offline, first release).**
+**🟢 Phase 10 (PWA — installable + offline) complete** — the first shippable
+milestone. Project sliced into 13 phases across four tracks
+(Core app → PWA milestone → Backend → Native).
+**Up next: Phase 11 (Supabase backend & Auth).**
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -32,20 +33,25 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 7 | Core | Card detail sheet | `phase-7-detail-sheet-spec.md` | ✅ Done |
 | 8 | Core | Scan flow (camera → confirm → tag) | `phase-8-scan-spec.md` | ✅ Done |
 | 9 | Core | Favorites & Settings | `phase-9-favorites-settings-spec.md` | ✅ Done |
-| 10 | Milestone | PWA — installable + offline (first release) | `phase-10-pwa-spec.md` | Not started |
+| 10 | Milestone | PWA — installable + offline (first release) | `phase-10-pwa-spec.md` | ✅ Done |
 | 11 | Backend | Supabase backend & Auth | `phase-11-supabase-auth-spec.md` | Not started |
 | 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | Not started |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
 
-## Up Next — Phase 10 (PWA — installable + offline)
+## Up Next — Phase 11 (Supabase backend & Auth)
 
-First shippable milestone: add the web app manifest + service worker so PokéPal
-is installable to the home screen and works offline, with the PWA assets (icons,
-`theme-color`, `viewport-fit=cover`). Full requirements:
-@context/features/phase-10-pwa-spec.md
+Stand up the Supabase backend (Postgres `cards` table via Prisma schema/migrations,
+Auth, Storage bucket, RLS owner-only policies) and wire kid-safe sign-in, keeping
+the app fully usable signed-out (local-only). Full requirements:
+@context/features/phase-11-supabase-auth-spec.md
 
 **Open decision before Phase 11:** confirm the kid-safe sign-in method (magic
 link vs social, parent-assisted) given App Store kids-category rules.
+
+**Manual verification still recommended for Phase 10:** on-device
+Add-to-Home-Screen (iOS Safari) + install prompt (Android/Chrome), a Lighthouse
+"Installable" audit, and an offline toggle — the build + all PWA assets/meta were
+verified over HTTP, but a real browser is needed for the SW/install runtime.
 
 ## Notes
 
@@ -223,3 +229,26 @@ link vs social, parent-assisted) given App Store kids-category rules.
   toggling the `.dark` class on `<html>`) + `useTheme` hook; a `THEME_INIT_SCRIPT`
   runs pre-paint in `layout.tsx` (`<head>`, `suppressHydrationWarning`) to avoid a
   theme flash. `npm run lint` + `npm run build` pass. **Completed.**
+- **2026-07-01** — Implemented **Phase 10 (PWA — installable + offline)** on
+  `feature/phase-10-pwa` — the first shippable milestone; packaging only, no new
+  product features. **Icons**: generated an on-brand Pokéball icon set into
+  `public/` (192/512 `any`, 192/512 `maskable` with safe-zone padding,
+  `apple-touch-icon` 180, favicon 48) with a dependency-free Node PNG generator
+  (pure `zlib` + hand-written CRC32, 4× supersampled anti-aliasing) since the
+  toolchain has no SVG rasterizer (`sips` only, no ImageMagick/rsvg). **Manifest**:
+  `public/manifest.webmanifest` (standalone, portrait, brand `#14151a`, `start_url`
+  `/`, full icon set incl. both maskable) linked via Next `metadata.manifest`;
+  added `metadata.icons` (favicon + apple-touch). **Service worker**: hand-rolled
+  `public/sw.js` (static-export-friendly, no build plugin) — precache the app
+  shell on install, network-first for navigations (offline → cached shell),
+  stale-while-revalidate for same-origin assets (next/font self-hosts, so no
+  cross-origin fetches); `skipWaiting`/`clients.claim` + a client
+  `ServiceWorkerRegistrar` that silently reloads once on a real update (never on
+  first install). **iOS**: added the legacy `apple-mobile-web-app-capable` meta
+  (Next emits only the modern `mobile-web-app-capable`) alongside the existing
+  `black-translucent` status bar + apple-touch icon + `viewport-fit=cover`.
+  **Theme color**: `applyTheme` now keeps the `theme-color` meta in sync with the
+  active day/night theme. `npm run lint` + `npm run build` pass; served `out/` and
+  verified manifest (200, `application/manifest+json`, standalone, 4 icons/2
+  maskable), `sw.js` (200), every icon (200), and the apple-capable meta. On-device
+  install/offline + Lighthouse audit still to be done in a real browser. **Completed.**
