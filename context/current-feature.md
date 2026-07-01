@@ -167,3 +167,10 @@ link vs social, parent-assisted) given App Store kids-category rules.
   into `AppShell` (replaced the Collection placeholder); card taps stay a no-op
   until the phase-7 detail sheet. `npm run lint` + `npm run build` pass; dev server
   renders 200. Merged to `main`, branch deleted. **Completed.**
+- **2026-07-01** — Fix **card tile frame** on `fix/card-tile-frame`. Reworked
+  `CardTile` so tiles read as true miniatures of `PokeCard`: gold frame → dark
+  body (`#14110b`) → a bordered type-gradient art panel (gold hairline) plus a
+  separate dark name plate (`#0f1015`) with the name in gold and `#dex · type` in
+  muted mono, replacing the previous single art fill with an overlaid gradient
+  plate. The `×N` duplicate badge now pins to the name plate's top edge.
+  `npm run build` passes. **Completed.**
