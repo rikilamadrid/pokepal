@@ -45,10 +45,22 @@ export function resolveInitialTheme(): Theme {
   return "dark";
 }
 
-/** Apply a theme by toggling the `dark` class on <html>. */
+/** Page-canvas colors per theme — kept in sync with the `--bg` tokens + manifest. */
+const THEME_COLOR: Record<Theme, string> = {
+  dark: "#14151a",
+  light: "#eceef2",
+};
+
+/**
+ * Apply a theme by toggling the `dark` class on <html>, and keep the
+ * `theme-color` meta (the OS status-bar / browser-chrome tint) in sync so it
+ * reflects the active day/night theme.
+ */
 export function applyTheme(theme: Theme): void {
   if (typeof document === "undefined") return;
   document.documentElement.classList.toggle("dark", theme === "dark");
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", THEME_COLOR[theme]);
 }
 
 /**
