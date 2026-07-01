@@ -10,9 +10,9 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟢 Phase 7 (Card detail sheet) complete.** Project sliced into 13
+**🟢 Phase 8 (Scan flow) complete.** Project sliced into 13
 phases across four tracks (Core app → PWA milestone → Backend → Native).
-**Up next: Phase 8 (Scan flow).**
+**Up next: Phase 9 (Favorites & Settings).**
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -30,21 +30,20 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 5 | Core | Home screen | `phase-5-home-spec.md` | ✅ Done |
 | 6 | Core | Collection screen | `phase-6-collection-spec.md` | ✅ Done |
 | 7 | Core | Card detail sheet | `phase-7-detail-sheet-spec.md` | ✅ Done |
-| 8 | Core | Scan flow (camera → confirm → tag) | `phase-8-scan-spec.md` | **Up next** |
+| 8 | Core | Scan flow (camera → confirm → tag) | `phase-8-scan-spec.md` | ✅ Done |
 | 9 | Core | Favorites & Settings | `phase-9-favorites-settings-spec.md` | Not started |
 | 10 | Milestone | PWA — installable + offline (first release) | `phase-10-pwa-spec.md` | Not started |
 | 11 | Backend | Supabase backend & Auth | `phase-11-supabase-auth-spec.md` | Not started |
 | 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | Not started |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
 
-## Up Next — Phase 8 (Scan flow)
+## Up Next — Phase 9 (Favorites & Settings)
 
-Build the three-step Scan bottom sheet (viewfinder → confirm → tag) opened by the
-center tab-bar puck, replacing the placeholder `ScanModal`: live rear camera with
-a golden target frame + shutter (file-upload fallback when the camera is
-unavailable), a confirm/retake preview, then a tag form (name, type picker, dex
-with auto-increment, rarity, favorite toggle) that saves via `addCard`.
-Full requirements: @context/features/phase-8-scan-spec.md
+Build the Favorites tab (full-page grid of starred cards, live-updating) and the
+Settings tab (account sign in/out placeholder, dark-mode toggle, total-caught &
+unique-species stats, release-entire-collection with confirm), replacing the two
+`PlaceholderScreen`s. Full requirements:
+@context/features/phase-9-favorites-settings-spec.md
 
 **Open decision before Phase 11:** confirm the kid-safe sign-in method (magic
 link vs social, parent-assisted) given App Store kids-category rules.
@@ -189,3 +188,22 @@ link vs social, parent-assisted) given App Store kids-category rules.
   with `openCard` / `closeCard`, lazy-loads the sheet via `next/dynamic`
   (`ssr:false`), and wires `onSelectCard` into Home and Collection (replacing the
   no-op taps). `npm run lint` + `npm run build` pass. **Completed.**
+- **2026-07-01** — Implemented **Phase 8 (Scan flow)** on `feature/phase-8-scan`.
+  Built the three-step Scan bottom sheet (`src/components/scan/`), lazy-loaded via
+  `next/dynamic` (`ssr:false`) so the camera stack stays out of the initial bundle;
+  replaced the placeholder `ScanModal` (deleted) — `AppShell` now mounts
+  `<ScanSheet>` only while `scanOpen`. `ScanSheet` owns the step state machine
+  (viewfinder → confirm → tag) + captured photo and reuses the phase-7 sheet shell
+  (drag-down/backdrop/✕/Escape dismiss, present/exit animations, back button).
+  **Step 1 `Viewfinder`**: live rear feed via a new `useCamera` hook + `camera.ts`
+  adapter (`getUserMedia` `facingMode:environment`, stream torn down on unmount;
+  phase-13 Capacitor swaps behind the adapter), golden target frame + circular
+  shutter (`captureFrame` → canvas JPEG), file-upload fallback on camera error,
+  and a "Skip photo" link (→ generated art). **Step 2 `ConfirmStep`**: preview +
+  Retake (restarts camera) / Use this photo (runs phase-2 `compressImage`, 640px
+  JPEG 0.78). **Step 3 `TagForm`**: name / type picker (6 gradient pills) / dex
+  (blank → `nextDexNumber` auto on save) / rarity / favorite `Switch`, a live
+  `PokeCard` preview, validated with **Zod** (`scan-schema.ts`; installed `zod`).
+  Submit builds the card via `addCard` (photo or generated SVG), toasts success
+  (sonner), and closes to Home. `npm run lint` + `npm run build` pass; dev server
+  renders 200. **Completed.**

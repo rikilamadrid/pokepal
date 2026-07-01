@@ -4,7 +4,6 @@ import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { NavBar } from "./NavBar";
 import { TabBar } from "./TabBar";
-import { ScanModal } from "./ScanModal";
 import { TABS, type Tab } from "./tabs";
 import { HomeScreen } from "@/components/screens/HomeScreen";
 import { CollectionScreen } from "@/components/screens/CollectionScreen";
@@ -14,6 +13,12 @@ import type { Card } from "@/types/card";
 // Lazy-loaded: the detail sheet isn't needed on first paint.
 const CardDetailSheet = dynamic(
   () => import("@/components/card/CardDetailSheet").then((m) => m.CardDetailSheet),
+  { ssr: false },
+);
+
+// Lazy-loaded: the camera stack must stay out of the initial bundle.
+const ScanSheet = dynamic(
+  () => import("@/components/scan/ScanSheet").then((m) => m.ScanSheet),
   { ssr: false },
 );
 
@@ -102,7 +107,7 @@ export function AppShell() {
         />
       </div>
 
-      <ScanModal open={scanOpen} onClose={() => setScanOpen(false)} />
+      {scanOpen && <ScanSheet onClose={() => setScanOpen(false)} />}
       {selectedCardId && (
         <CardDetailSheet cardId={selectedCardId} onClose={closeCard} />
       )}
