@@ -7,7 +7,8 @@ import { TabBar } from "./TabBar";
 import { TABS, type Tab } from "./tabs";
 import { HomeScreen } from "@/components/screens/HomeScreen";
 import { CollectionScreen } from "@/components/screens/CollectionScreen";
-import { PlaceholderScreen } from "@/components/screens/PlaceholderScreen";
+import { FavoritesScreen } from "@/components/screens/FavoritesScreen";
+import { SettingsScreen } from "@/components/screens/SettingsScreen";
 import type { Card } from "@/types/card";
 
 // Lazy-loaded: the detail sheet isn't needed on first paint.
@@ -67,12 +68,8 @@ export function AppShell() {
       />
     ),
     collection: <CollectionScreen onSelectCard={openCard} />,
-    favorites: (
-      <PlaceholderScreen title="Favorites" note="Starred cards — phase 9" />
-    ),
-    settings: (
-      <PlaceholderScreen title="Settings" note="Account, theme, stats — phase 9" />
-    ),
+    favorites: <FavoritesScreen onSelectCard={openCard} />,
+    settings: <SettingsScreen />,
   };
 
   return (

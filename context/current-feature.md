@@ -10,9 +10,9 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟢 Phase 8 (Scan flow) complete.** Project sliced into 13
+**🟢 Phase 9 (Favorites & Settings) complete.** Project sliced into 13
 phases across four tracks (Core app → PWA milestone → Backend → Native).
-**Up next: Phase 9 (Favorites & Settings).**
+**Up next: Phase 10 (PWA — installable + offline, first release).**
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -31,19 +31,18 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 6 | Core | Collection screen | `phase-6-collection-spec.md` | ✅ Done |
 | 7 | Core | Card detail sheet | `phase-7-detail-sheet-spec.md` | ✅ Done |
 | 8 | Core | Scan flow (camera → confirm → tag) | `phase-8-scan-spec.md` | ✅ Done |
-| 9 | Core | Favorites & Settings | `phase-9-favorites-settings-spec.md` | Not started |
+| 9 | Core | Favorites & Settings | `phase-9-favorites-settings-spec.md` | ✅ Done |
 | 10 | Milestone | PWA — installable + offline (first release) | `phase-10-pwa-spec.md` | Not started |
 | 11 | Backend | Supabase backend & Auth | `phase-11-supabase-auth-spec.md` | Not started |
 | 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | Not started |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
 
-## Up Next — Phase 9 (Favorites & Settings)
+## Up Next — Phase 10 (PWA — installable + offline)
 
-Build the Favorites tab (full-page grid of starred cards, live-updating) and the
-Settings tab (account sign in/out placeholder, dark-mode toggle, total-caught &
-unique-species stats, release-entire-collection with confirm), replacing the two
-`PlaceholderScreen`s. Full requirements:
-@context/features/phase-9-favorites-settings-spec.md
+First shippable milestone: add the web app manifest + service worker so PokéPal
+is installable to the home screen and works offline, with the PWA assets (icons,
+`theme-color`, `viewport-fit=cover`). Full requirements:
+@context/features/phase-10-pwa-spec.md
 
 **Open decision before Phase 11:** confirm the kid-safe sign-in method (magic
 link vs social, parent-assisted) given App Store kids-category rules.
@@ -207,3 +206,20 @@ link vs social, parent-assisted) given App Store kids-category rules.
   Submit builds the card via `addCard` (photo or generated SVG), toasts success
   (sonner), and closes to Home. `npm run lint` + `npm run build` pass; dev server
   renders 200. **Completed.**
+- **2026-07-01** — Implemented **Phase 9 (Favorites & Settings)** on
+  `feature/phase-9-favorites-settings`, replacing the last two `PlaceholderScreen`s
+  (file kept, now unused). **Favorites** (`FavoritesScreen`): a 2-column `CardTile`
+  grid of every starred card, newest-first, reusing the phase-6 grid styling with
+  live `findDuplicates` badges; updates instantly as cards are (un)favorited from
+  the detail sheet; friendly empty state; taps open the detail sheet — the
+  destination for Home's "See all". **Settings** (`SettingsScreen`): grouped inset
+  iOS list (new `SettingsGroup` / `SettingsRow` / `SettingsStat` in
+  `src/components/settings/`) with an Account **stub** row (phase 11), a **Dark
+  mode** `Switch`, live **Total caught** + **Unique species** (distinct `dexNo`)
+  stats, and a destructive **Release entire collection** row that confirms via a
+  new `ReleaseAllDialog` (shadcn dialog) before `releaseAll()` + success toast
+  (disabled when empty). **Theming**: new `src/lib/theme.ts` (light/dark persisted
+  under key `"theme"`, resolves stored → `prefers-color-scheme` → dark, applied by
+  toggling the `.dark` class on `<html>`) + `useTheme` hook; a `THEME_INIT_SCRIPT`
+  runs pre-paint in `layout.tsx` (`<head>`, `suppressHydrationWarning`) to avoid a
+  theme flash. `npm run lint` + `npm run build` pass. **Completed.**
