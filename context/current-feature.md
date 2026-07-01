@@ -10,9 +10,9 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟢 Phase 4 (Navigation & screen transitions) complete.** Project sliced into 13
+**🟢 Phase 5 (Home screen) complete.** Project sliced into 13
 phases across four tracks (Core app → PWA milestone → Backend → Native).
-**Up next: Phase 5 (Home screen).**
+**Up next: Phase 6 (Collection screen).**
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -27,8 +27,8 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 2 | Core | Data model & local-first storage layer | `phase-2-data-storage-spec.md` | ✅ Done |
 | 3 | Core | Card & tile component system | `phase-3-card-system-spec.md` | ✅ Done |
 | 4 | Core | Navigation & screen transitions | `phase-4-navigation-spec.md` | ✅ Done |
-| 5 | Core | Home screen | `phase-5-home-spec.md` | **Up next** |
-| 6 | Core | Collection screen | `phase-6-collection-spec.md` | Not started |
+| 5 | Core | Home screen | `phase-5-home-spec.md` | ✅ Done |
+| 6 | Core | Collection screen | `phase-6-collection-spec.md` | **Up next** |
 | 7 | Core | Card detail sheet | `phase-7-detail-sheet-spec.md` | Not started |
 | 8 | Core | Scan flow (camera → confirm → tag) | `phase-8-scan-spec.md` | Not started |
 | 9 | Core | Favorites & Settings | `phase-9-favorites-settings-spec.md` | Not started |
@@ -37,13 +37,13 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | Not started |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
 
-## Up Next — Phase 5 (Home screen)
+## Up Next — Phase 6 (Collection screen)
 
-Build the real Home screen inside the phase-4 shell: the hero (latest catch) as a
-floating/tilting `PokeCard` with holo sweep, the Favorites row (horizontal scroll,
-capped at 8, "See all" → Favorites tab), and the Duplicates row — all driven by
-the phase-2 store and rendered with the phase-3 card components. Full
-requirements: @context/features/phase-5-home-spec.md
+Build the Collection screen inside the phase-4 shell: a 2-column grid of all cards
+(newest first) rendered with the phase-3 `CardTile`, an iOS-style search bar that
+filters by name, dex number, or type in real time (120 ms debounce), and a card
+count pill next to the eyebrow label. Full requirements:
+@context/features/phase-6-collection-spec.md
 
 **Open decision before Phase 11:** confirm the kid-safe sign-in method (magic
 link vs social, parent-assisted) given App Store kids-category rules.
@@ -139,3 +139,18 @@ link vs social, parent-assisted) given App Store kids-category rules.
   Collection/Favorites/Settings. `page.tsx` now just renders `<AppShell />`.
   `npm run lint` + `npm run build` pass; dev server renders 200 with all tabs +
   four stacked screens. **Completed.**
+- **2026-07-01** — Implemented **Phase 5 (Home screen)** on `feature/phase-5-home`.
+  Built the real Home surface over the phase-2 store and phase-3 cards:
+  `HeroCard` (latest catch = max `caughtAt`) renders a large `PokeCard` inside a
+  new `.hero-float` wrapper (gentle float + tilt, `will-change`, disabled under
+  `prefers-reduced-motion`; holo sweep inherited from `PokeCard`), followed by
+  name (Lilita One), `#dex · Type · Rarity`, and a "Caught {relative}" line.
+  `CardRow` (reusable) renders a horizontal-scroll strip of `CardTile`s with an
+  eyebrow label + count pill, optional "See all", hidden scrollbar/momentum via a
+  new `.hide-scrollbar` utility, and a friendly empty hint. `HomeScreen` derives
+  hero / favorites (capped at 8) / duplicates (via `findDuplicates`) live from the
+  collection with `useMemo`, gates on `ready`, and shows a full "No cards yet"
+  fallback. `AppShell` moved the screen map inline so Home's "See all" switches to
+  the Favorites tab; card taps are a no-op until the phase-7 detail sheet.
+  `npm run lint` + `npm run build` pass; dev server renders 200. Merged to `main`,
+  branch deleted. **Completed.**
