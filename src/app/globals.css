@@ -192,6 +192,37 @@
     }
   }
 
+  /* Momentum horizontal rows with no visible scrollbar. */
+  .hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Gentle float + tilt for the Home hero card. */
+  .hero-float {
+    animation: hero-float 5.5s ease-in-out infinite;
+    transform-origin: center;
+    will-change: transform;
+  }
+  @keyframes hero-float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-1.1deg);
+    }
+    50% {
+      transform: translateY(-8px) rotate(1.1deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-float {
+      animation: none;
+    }
+  }
+
   /* Stacked screens — only the active one is visible + interactive. Cross-fades
      with a subtle lift; instant swap under reduced motion. */
   .screen {
