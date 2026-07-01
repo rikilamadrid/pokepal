@@ -10,9 +10,9 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟢 Phase 1 (Foundation) complete & merged.** Project sliced into 13 phases
-across four tracks (Core app → PWA milestone → Backend → Native). **Up next:
-Phase 2 (Data model & local-first storage layer).**
+**🟢 Phase 2 (Data model & local-first storage layer) complete.** Project sliced
+into 13 phases across four tracks (Core app → PWA milestone → Backend → Native).
+**Up next: Phase 3 (Card & tile component system).**
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -24,8 +24,8 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | # | Track | Feature | Spec | State |
 | --- | --- | --- | --- | --- |
 | 1 | Core | Foundation — setup, static export, tokens & static shell | `phase-1-foundation-spec.md` | ✅ Done |
-| 2 | Core | Data model & local-first storage layer | `phase-2-data-storage-spec.md` | **Up next** |
-| 3 | Core | Card & tile component system | `phase-3-card-system-spec.md` | Not started |
+| 2 | Core | Data model & local-first storage layer | `phase-2-data-storage-spec.md` | ✅ Done |
+| 3 | Core | Card & tile component system | `phase-3-card-system-spec.md` | **Up next** |
 | 4 | Core | Navigation & screen transitions | `phase-4-navigation-spec.md` | Not started |
 | 5 | Core | Home screen | `phase-5-home-spec.md` | Not started |
 | 6 | Core | Collection screen | `phase-6-collection-spec.md` | Not started |
@@ -37,16 +37,12 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | Not started |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
 
-## Up Next — Phase 2 (Data model & local-first storage layer)
+## Up Next — Phase 3 (Card & tile component system)
 
-Build the headless, local-first data layer: the `Card` type, a persistent
-on-device store (Context/zustand → `localStorage`) with `addCard` /
-`toggleFavorite` / `releaseCard` / `releaseAll`, seed-on-empty (~10 cards),
-the type-gradient map, deterministic generated SVG creature art, duplicate
-detection, `nextDexNumber()`, and the 640px/0.78 image-compression util. Shape it
-so the phase-12 sync engine bolts on without a rewrite (all access behind store
-actions, bump `updatedAt` on mutation). No UI beyond proving the store persists.
-Full requirements: @context/features/phase-2-data-storage-spec.md
+Build the visual card + tile components that render the phase-2 store: `PokeCard`,
+`CardTile`, type/rarity badges, the duplicate `×N` badge, and the earned holo
+sweep for `rarity: "holo"`. Consumes the type-gradient map and generated art from
+phase 2. Full requirements: @context/features/phase-3-card-system-spec.md
 
 **Open decision before Phase 11:** confirm the kid-safe sign-in method (magic
 link vs social, parent-assisted) given App Store kids-category rules.
@@ -88,3 +84,25 @@ link vs social, parent-assisted) given App Store kids-category rules.
   Scan puck, Pokeball SVG) + placeholder Home screen. Removed all CNA boilerplate
   (public SVGs, default favicon, README). `npm run lint` + `npm run build` pass.
   Merged to `main`, branch deleted. **Completed.**
+- **2026-06-30** — Repo housekeeping. Connected the local repo to its GitHub
+  remote (`origin` → `https://github.com/rikilamadrid/pokepal.git`) and pushed
+  `main` (upstream tracking set). Removed sync-conflict duplicate files (the
+  `" 2"` copies created by the file-sync service under `context/`, `src/`, and
+  `.next/`); none were git-tracked, so no commit was needed.
+- **2026-06-30** — Implemented **Phase 2 (Data model & local-first storage
+  layer)** on `feature/phase-2-data-storage`. Added the `Card`/`CardType`/`Rarity`
+  types + a `NewCard` input shape (`src/types/card.ts`). Built the headless store
+  as a React Context (`src/hooks/useCollection.tsx`) with `cards` + `ready` and
+  actions `addCard` / `toggleFavorite` / `releaseCard` / `releaseAll`; every
+  mutation bumps `updatedAt`. localStorage is isolated in `src/lib/storage.ts`
+  (key `"collection"`, SSR-guarded) — the only module that touches it, so the
+  phase-12 sync engine slots in without touching callers; rehydrate-on-mount seeds
+  ~10 cards on empty (`src/data/seed.ts`, incl. a holo hero + a shared dex #014
+  for duplicate testing). Libs: `type-gradients.ts` (single-source gradient map
+  mirroring the phase-1 CSS tokens), `art-gen.ts` (deterministic SVG creature from
+  a name+dex hash → 1 of 3 blobs, gradient fill, hash-varied eyes + smile,
+  data-URI), `collection-utils.ts` (`findDuplicates` / `isDuplicate` /
+  `nextDexNumber`), `image-compress.ts` (canvas → 640px JPEG 0.78, browser-only).
+  Provider mounted in `layout.tsx`. Temporary `StoreProof` panel on Home proves
+  persistence/actions (removed in phase 5). `npm run lint` + `npm run build` pass;
+  dev server renders 200. **Completed.**

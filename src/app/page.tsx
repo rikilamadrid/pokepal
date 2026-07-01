@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/shell/AppShell";
+import { StoreProof } from "@/components/home/StoreProof";
 
 /** A static placeholder tile for the display-only phase-1 shell. */
 function PlaceholderTile({ className = "" }: { className?: string }) {
@@ -17,6 +18,9 @@ export default function Home() {
   return (
     <AppShell>
       <div className="flex flex-col gap-8 px-5 pb-8 pt-5">
+        {/* Temporary phase-2 store proof — removed when phase 5 builds Home */}
+        <StoreProof />
+
         {/* Latest catch (hero placeholder) */}
         <section className="flex flex-col gap-3">
           <p className="eyebrow">Latest Catch</p>
