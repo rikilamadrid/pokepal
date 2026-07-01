@@ -10,9 +10,9 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟢 Phase 11 (Supabase backend & Auth) — code + backend verified** (ready to
-merge). Phases 1–10 (Core app + PWA milestone) complete. Project sliced into 13
-phases across four tracks (Core app → PWA milestone → Backend → Native).
+**🟡 Phase 12 (Cloud sync) — active.** Phases 1–11 complete (Core app + PWA
+milestone + Supabase backend/auth). Project sliced into 13 phases across four
+tracks (Core app → PWA milestone → Backend → Native).
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -34,20 +34,37 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 9 | Core | Favorites & Settings | `phase-9-favorites-settings-spec.md` | ✅ Done |
 | 10 | Milestone | PWA — installable + offline (first release) | `phase-10-pwa-spec.md` | ✅ Done |
 | 11 | Backend | Supabase backend & Auth | `phase-11-supabase-auth-spec.md` | 🟢 Verified |
-| 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | Not started |
+| 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | 🟡 Active |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
+| 14 | Enhancement | Scan capture quality (relaxed viewfinder, focus) | `phase-14-scan-capture-spec.md` | Not started |
+| 15 | Enhancement | Expanded type system (+ card stage) | `phase-15-type-system-spec.md` | Not started |
+| 16 | Enhancement | Account & privacy hardening (account-switch fix) | `phase-16-account-privacy-spec.md` | Not started |
+| 17 | Enhancement | AI card auto-recognition (premium) | `phase-17-ai-recognition-spec.md` | Not started |
 
-## Up Next — Phase 11 (Supabase backend & Auth)
+## Up Next — Phase 12 (Cloud sync)
 
-Stand up the Supabase backend (Postgres `cards` table via Prisma schema/migrations,
-Auth, Storage bucket, RLS owner-only policies) and wire kid-safe sign-in, keeping
-the app fully usable signed-out (local-only). Full requirements:
-@context/features/phase-11-supabase-auth-spec.md
+Connect the local-first store (phase 2) to the Supabase backend (phase 11) with a
+background sync engine: local changes push up, remote changes pull down, images
+upload to Storage. Full requirements: @context/features/phase-12-cloud-sync-spec.md
 
-**Sign-in method (locked 2026-07-01):** **magic link (email)** — passwordless,
-no third-party data sharing (best fit for App Store kids-category rules),
-parent-assisted (parent enters their email). Supabase project created by the
-user with step-by-step guidance while the code is scaffolded.
+**Design decisions (locked 2026-07-01):**
+- **Deletions → tombstones** in a separate localStorage key (`collection:tombstones`,
+  `id → deletedAt`), so existing `cards` selectors are untouched. `releaseCard` /
+  `releaseAll` record tombstones; sync propagates them as `deleted_at` soft-deletes.
+- **Reconciliation:** full-state last-writer-wins by `updatedAt` (a tombstone's
+  `deletedAt` is its version). Local-only → insert cloud; cloud-only → insert local;
+  conflict → newest wins; delete → propagate without resurrecting.
+- **Images:** generated-SVG data-URIs stored inline in the row; captured JPEGs
+  upload to `card-images/{userId}/{cardId}.jpg` and the row stores the *path*
+  (private bucket → signed URL on pull; the capturing device keeps its data-URI for
+  offline). `collection:uploaded` id-set prevents re-uploading on favorite edits.
+- **First-sign-in adoption:** stamp `ownerId` on local (signed-out) cards and push
+  them, merging rather than wiping. Seed ids are deterministic (`seed-N`) so the
+  same account on two devices dedupes by id.
+- **Triggers:** sign-in, window focus, reconnect (`online`), debounced-after-change.
+  No realtime (spec optional). Full-state sync doubles as the offline queue.
+- **Status UI:** a Settings row — "Backed up · {time}" / "Syncing…" / "Offline" /
+  error + Retry.
 
 **Manual verification still recommended for Phase 10:** on-device
 Add-to-Home-Screen (iOS Safari) + install prompt (Android/Chrome), a Lighthouse
@@ -304,3 +321,30 @@ verified over HTTP, but a real browser is needed for the SW/install runtime.
   bucket) — success. Configured Email provider + Redirect URLs
   (`localhost:3002`). Verified magic-link sign-in end to end in the browser
   (email shows in the Settings → Account row). **Ready to commit + merge.**
+- **2026-07-01** — Implemented **Phase 12 (Cloud sync)** code on
+  `feature/phase-12-cloud-sync`. Background sync engine reconciling the local
+  store with the Supabase `cards` table. **Deletions → tombstones** in a separate
+  `localStorage` key (`collection:tombstones`, id→deletedAt) so existing `cards`
+  selectors are untouched; `releaseCard`/`releaseAll` record them (`storage.ts`
+  gained tombstone + uploaded-id-set helpers; `useCollection` gained
+  `tombstones` + a single `applySync` mutator + owner-claim). **Pure `reconcile()`**
+  (`src/lib/sync.ts`) — last-writer-wins by parsed-epoch `updatedAt` (Postgres
+  returns a different ISO format than our `…Z`, so compares are numeric, not
+  string), returning a plan: local-only→push, cloud-only→pull, conflict→newest,
+  local delete→push soft-delete, remote delete→drop+tombstone, resurrection when
+  a remote edit post-dates a local delete. **Data access** (`supabase-cards.ts`):
+  row↔Card mappers, fetch/upsert/markDeleted, image upload/sign, and push/pull
+  image resolvers — generated-SVG data-URIs stored inline in the row; captured
+  JPEGs upload to `card-images/{userId}/{cardId}.jpg` (private bucket → signed
+  URL on pull; capturing device keeps its data-URI offline); `collection:uploaded`
+  id-set skips re-uploads on favorite edits. **`useSync` provider** (mounted in
+  `layout.tsx` under `CollectionProvider`): serialized runs (lock + dirty flag),
+  triggers on sign-in / focus / reconnect / debounced-after-change; first-sign-in
+  **adoption** stamps `ownerId` and pushes local cards (seed ids deterministic →
+  dedupe by id); full-state sync doubles as the offline queue. **Settings** shows
+  a sync-status row (Backed up · {relative} / Syncing… / Offline / retry on error;
+  `relativeTime` added to `date.ts`). `npm run build` + TypeScript pass; new code
+  lints clean (only the 3 pre-existing `generate-icons.js` require() errors
+  remain). **Remaining before merge:** browser verification — local→cloud push,
+  cloud→local pull on a second device/session, image upload + signed-URL display,
+  offline edits flushing on reconnect, first-sign-in adoption, delete propagation.

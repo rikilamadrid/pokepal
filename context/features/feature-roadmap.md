@@ -35,6 +35,26 @@ Three tracks: **Core app** (local-first, offline, no account) → **PWA mileston
 | 11 | Backend | Supabase backend & Auth (schema, RLS, Storage, sign-in) | `phase-11-supabase-auth-spec.md` | Not started |
 | 12 | Backend | Cloud sync (local-first ↔ Supabase, image upload, multi-device) | `phase-12-cloud-sync-spec.md` | Not started |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android, store submission | `phase-13-native-capacitor-spec.md` | Not started |
+| 14 | Enhancement | Scan capture quality — relaxed viewfinder, framing guides, tap-to-focus | `phase-14-scan-capture-spec.md` | Not started |
+| 15 | Enhancement | Expanded type system (+ optional card stage) | `phase-15-type-system-spec.md` | Not started |
+| 16 | Enhancement | Account & privacy hardening — account-switch fix, sign-out handling | `phase-16-account-privacy-spec.md` | Not started |
+| 17 | Enhancement | AI card auto-recognition (premium / subscription) | `phase-17-ai-recognition-spec.md` | Not started |
+
+> **Live status lives in @context/current-feature.md** (this table is the original
+> plan). Phases 1–12 are complete; 14–17 were added 2026-07-01 from on-device
+> testing feedback and follow the same per-phase workflow.
+
+### Enhancement track — decisions (locked 2026-07-01)
+
+- **Sign-out (phase 16):** keep the local-first default — signing out leaves cards
+  on the device. No clear-on-sign-out. But the account-switch ownership bug (below)
+  is fixed regardless.
+- **Account-switch bug (phase 16):** today the sync forces `owner_id` to the current
+  user, so on a shared device a second account would absorb the first account's
+  cards. Phase 16 must never push cards owned by a different user.
+- **AI recognition (phase 17):** gated behind a **subscription** (premium). Requires
+  a server-side entitlement check + a billing mechanism (web + native IAP) and a
+  Supabase Edge Function proxy so the AI key never ships to the client.
 
 ## Dependency notes
 
