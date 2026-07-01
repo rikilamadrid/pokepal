@@ -250,6 +250,51 @@
     }
   }
 
+  /* Bottom-sheet present: fade the backdrop in and slide the panel up.
+     Instant under reduced motion. */
+  .sheet-backdrop-in {
+    animation: sheet-backdrop-in 0.2s ease-out;
+  }
+  .sheet-panel-in {
+    animation: sheet-panel-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes sheet-backdrop-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes sheet-panel-in {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  /* Bottom-sheet dismiss: fade the backdrop out and slide the panel down, holding
+     the end state until the component unmounts. */
+  .sheet-backdrop-out {
+    animation: sheet-backdrop-out 0.26s ease-out forwards;
+  }
+  .sheet-panel-out {
+    animation: sheet-panel-out 0.26s cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+  @keyframes sheet-backdrop-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes sheet-panel-out {
+    to {
+      transform: translateY(100%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet-backdrop-in,
+    .sheet-panel-in,
+    .sheet-backdrop-out,
+    .sheet-panel-out {
+      animation: none;
+    }
+  }
+
   /* Holo foil sweep — the one earned decorative animation (rarity: "holo").
      Applied to an inset overlay inside an overflow-hidden art panel. */
   .holo-sweep {

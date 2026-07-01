@@ -10,9 +10,9 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟢 Phase 6 (Collection screen) complete.** Project sliced into 13
+**🟢 Phase 7 (Card detail sheet) complete.** Project sliced into 13
 phases across four tracks (Core app → PWA milestone → Backend → Native).
-**Up next: Phase 7 (Card detail sheet).**
+**Up next: Phase 8 (Scan flow).**
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -29,21 +29,22 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 4 | Core | Navigation & screen transitions | `phase-4-navigation-spec.md` | ✅ Done |
 | 5 | Core | Home screen | `phase-5-home-spec.md` | ✅ Done |
 | 6 | Core | Collection screen | `phase-6-collection-spec.md` | ✅ Done |
-| 7 | Core | Card detail sheet | `phase-7-detail-sheet-spec.md` | **Up next** |
-| 8 | Core | Scan flow (camera → confirm → tag) | `phase-8-scan-spec.md` | Not started |
+| 7 | Core | Card detail sheet | `phase-7-detail-sheet-spec.md` | ✅ Done |
+| 8 | Core | Scan flow (camera → confirm → tag) | `phase-8-scan-spec.md` | **Up next** |
 | 9 | Core | Favorites & Settings | `phase-9-favorites-settings-spec.md` | Not started |
 | 10 | Milestone | PWA — installable + offline (first release) | `phase-10-pwa-spec.md` | Not started |
 | 11 | Backend | Supabase backend & Auth | `phase-11-supabase-auth-spec.md` | Not started |
 | 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | Not started |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
 
-## Up Next — Phase 7 (Card detail sheet)
+## Up Next — Phase 8 (Scan flow)
 
-Build the bottom-sheet card detail modal (opened by tapping any card anywhere):
-full `PokeCard` at the top, a 2×2 stat grid (dex, type, rarity, caught date),
-and Favorite / Release actions that update every screen instantly via the store.
-Wire the `onSelectCard` handler that Home and Collection already pass through.
-Full requirements: @context/features/phase-7-detail-sheet-spec.md
+Build the three-step Scan bottom sheet (viewfinder → confirm → tag) opened by the
+center tab-bar puck, replacing the placeholder `ScanModal`: live rear camera with
+a golden target frame + shutter (file-upload fallback when the camera is
+unavailable), a confirm/retake preview, then a tag form (name, type picker, dex
+with auto-increment, rarity, favorite toggle) that saves via `addCard`.
+Full requirements: @context/features/phase-8-scan-spec.md
 
 **Open decision before Phase 11:** confirm the kid-safe sign-in method (magic
 link vs social, parent-assisted) given App Store kids-category rules.
@@ -174,3 +175,17 @@ link vs social, parent-assisted) given App Store kids-category rules.
   muted mono, replacing the previous single art fill with an overlaid gradient
   plate. The `×N` duplicate badge now pins to the name plate's top edge.
   `npm run build` passes. **Completed.**
+- **2026-07-01** — Implemented **Phase 7 (Card detail sheet)** on
+  `feature/phase-7-detail-sheet`. Built `CardDetailSheet` — the shared "open a
+  card" bottom sheet opened by tapping any card: frosted `.glass` panel with a
+  drag handle, the card name (Lilita One) + `✕` header, the full `PokeCard`
+  (holo sweep + `×N` badge intact), a 2×2 stat grid (dex, type, rarity, caught
+  date), and Favorite / Release actions. The card is read live from the store by
+  id (via `useCollection`) so favorite toggles reflect in the sheet and every
+  screen instantly; Release calls `releaseCard` then closes. Dismiss via
+  drag-down (pointer-drag past 110px), backdrop tap, `✕`, or Escape. New
+  `.sheet-backdrop-in` / `.sheet-panel-in` present animations (slide-up + fade,
+  disabled under `prefers-reduced-motion`). `AppShell` now owns `selectedCardId`
+  with `openCard` / `closeCard`, lazy-loads the sheet via `next/dynamic`
+  (`ssr:false`), and wires `onSelectCard` into Home and Collection (replacing the
+  no-op taps). `npm run lint` + `npm run build` pass. **Completed.**
