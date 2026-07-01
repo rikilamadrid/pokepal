@@ -8,19 +8,6 @@ import { TABS, type Tab } from "./tabs";
 import { HomeScreen } from "@/components/screens/HomeScreen";
 import { PlaceholderScreen } from "@/components/screens/PlaceholderScreen";
 
-const SCREENS: Record<Tab, React.ReactNode> = {
-  home: <HomeScreen />,
-  collection: (
-    <PlaceholderScreen title="Collection" note="Grid + search — phase 6" />
-  ),
-  favorites: (
-    <PlaceholderScreen title="Favorites" note="Starred cards — phase 9" />
-  ),
-  settings: (
-    <PlaceholderScreen title="Settings" note="Account, theme, stats — phase 9" />
-  ),
-};
-
 /**
  * Fixed, phone-shaped app frame and client-side navigator. Owns the active tab,
  * the Scan modal, and the scroll-aware navbar border. All four screens stay
@@ -54,6 +41,20 @@ export function AppShell() {
 
   const activeTitle = TABS.find((t) => t.id === activeTab)?.title ?? "";
 
+  // Detail-sheet wiring lands in phase 7; tapping a card is a no-op for now.
+  const screens: Record<Tab, React.ReactNode> = {
+    home: <HomeScreen onSeeAllFavorites={() => selectTab("favorites")} />,
+    collection: (
+      <PlaceholderScreen title="Collection" note="Grid + search — phase 6" />
+    ),
+    favorites: (
+      <PlaceholderScreen title="Favorites" note="Starred cards — phase 9" />
+    ),
+    settings: (
+      <PlaceholderScreen title="Settings" note="Account, theme, stats — phase 9" />
+    ),
+  };
+
   return (
     <div className="fixed inset-0 flex justify-center bg-black">
       <div className="relative flex h-full w-full max-w-[480px] flex-col overflow-hidden bg-background">
@@ -73,7 +74,7 @@ export function AppShell() {
                 aria-hidden={!isActive}
                 onScroll={handleScroll(t.id)}
               >
-                {SCREENS[t.id]}
+                {screens[t.id]}
               </div>
             );
           })}
