@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Lilita_One, Space_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { CollectionProvider } from "@/hooks/useCollection";
 import "./globals.css";
 
 const lilita = Lilita_One({
@@ -46,7 +47,7 @@ export default function RootLayout({
       className={`dark ${lilita.variable} ${spaceMono.variable}`}
     >
       <body>
-        {children}
+        <CollectionProvider>{children}</CollectionProvider>
         <Toaster position="top-center" />
       </body>
     </html>
