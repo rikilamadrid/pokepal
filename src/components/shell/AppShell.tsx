@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { NavBar } from "./NavBar";
 import { TabBar } from "./TabBar";
 import { ScanModal } from "./ScanModal";
@@ -8,6 +9,13 @@ import { TABS, type Tab } from "./tabs";
 import { HomeScreen } from "@/components/screens/HomeScreen";
 import { CollectionScreen } from "@/components/screens/CollectionScreen";
 import { PlaceholderScreen } from "@/components/screens/PlaceholderScreen";
+import type { Card } from "@/types/card";
+
+// Lazy-loaded: the detail sheet isn't needed on first paint.
+const CardDetailSheet = dynamic(
+  () => import("@/components/card/CardDetailSheet").then((m) => m.CardDetailSheet),
+  { ssr: false },
+);
 
 /**
  * Fixed, phone-shaped app frame and client-side navigator. Owns the active tab,
@@ -18,7 +26,11 @@ export function AppShell() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [scanOpen, setScanOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const screenRefs = useRef<Partial<Record<Tab, HTMLDivElement | null>>>({});
+
+  const openCard = useCallback((card: Card) => setSelectedCardId(card.id), []);
+  const closeCard = useCallback(() => setSelectedCardId(null), []);
 
   const selectTab = useCallback(
     (tab: Tab) => {
@@ -42,10 +54,14 @@ export function AppShell() {
 
   const activeTitle = TABS.find((t) => t.id === activeTab)?.title ?? "";
 
-  // Detail-sheet wiring lands in phase 7; tapping a card is a no-op for now.
   const screens: Record<Tab, React.ReactNode> = {
-    home: <HomeScreen onSeeAllFavorites={() => selectTab("favorites")} />,
-    collection: <CollectionScreen />,
+    home: (
+      <HomeScreen
+        onSelectCard={openCard}
+        onSeeAllFavorites={() => selectTab("favorites")}
+      />
+    ),
+    collection: <CollectionScreen onSelectCard={openCard} />,
     favorites: (
       <PlaceholderScreen title="Favorites" note="Starred cards — phase 9" />
     ),
@@ -87,6 +103,9 @@ export function AppShell() {
       </div>
 
       <ScanModal open={scanOpen} onClose={() => setScanOpen(false)} />
+      {selectedCardId && (
+        <CardDetailSheet cardId={selectedCardId} onClose={closeCard} />
+      )}
     </div>
   );
 }
