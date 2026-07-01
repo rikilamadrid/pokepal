@@ -10,9 +10,10 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟡 Phase 12 (Cloud sync) — active.** Phases 1–11 complete (Core app + PWA
-milestone + Supabase backend/auth). Project sliced into 13 phases across four
-tracks (Core app → PWA milestone → Backend → Native).
+**🟢 Phase 12 (Cloud sync) — merged; browser verification pending.** Phases 1–12
+code-complete (Core app + PWA milestone + Supabase backend/auth + cloud sync).
+Project sliced into 13 phases across four tracks (Core app → PWA milestone →
+Backend → Native).
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -34,7 +35,7 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 9 | Core | Favorites & Settings | `phase-9-favorites-settings-spec.md` | ✅ Done |
 | 10 | Milestone | PWA — installable + offline (first release) | `phase-10-pwa-spec.md` | ✅ Done |
 | 11 | Backend | Supabase backend & Auth | `phase-11-supabase-auth-spec.md` | 🟢 Verified |
-| 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | 🟡 Active |
+| 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | ✅ Done (browser verify pending) |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
 | 14 | Enhancement | Scan capture quality (relaxed viewfinder, focus) | `phase-14-scan-capture-spec.md` | Not started |
 | 15 | Enhancement | Expanded type system (+ card stage) | `phase-15-type-system-spec.md` | Not started |
@@ -348,3 +349,9 @@ verified over HTTP, but a real browser is needed for the SW/install runtime.
   remain). **Remaining before merge:** browser verification — local→cloud push,
   cloud→local pull on a second device/session, image upload + signed-URL display,
   offline edits flushing on reconnect, first-sign-in adoption, delete propagation.
+- **2026-07-01** — **Phase 12 committed, pushed, and merged to `main`**
+  (`--no-ff`, merge `e064ea5`); feature branch deleted (local + remote). Build
+  passed pre-commit. Also added the phase 14–17 enhancement specs and removed the
+  file-sync-service `" 2"` duplicate files. **Code-complete; browser verification
+  still pending** (push/pull on a second device, image upload + signed-URL display,
+  offline flush on reconnect, first-sign-in adoption, delete propagation).
