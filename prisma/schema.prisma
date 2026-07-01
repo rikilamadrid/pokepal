@@ -1,0 +1,37 @@
+// PokéPal — Prisma schema for the Supabase Postgres backend.
+// Prisma owns the table schema + migrations; runtime reads/writes go through the
+// Supabase JS client (RLS-enforced). Row-Level-Security policies and the Storage
+// bucket are managed in `prisma/supabase-setup.sql` (auth/storage live outside the
+// public schema Prisma manages).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Connection URLs live in `prisma.config.ts` (Prisma 7 moved them out of the
+  // schema). Migrations use the direct connection; runtime data access is the
+  // Supabase JS client, not Prisma.
+}
+
+/// A single collected card. Mirrors the client `Card` type (src/types/card.ts).
+/// `ownerId` references the Supabase auth user; `deletedAt` is a soft-delete flag
+/// for phase-12 sync (last-writer-wins on `updatedAt`).
+model Card {
+  id        String    @id
+  ownerId   String    @map("owner_id") @db.Uuid
+  name      String
+  dexNo     String    @map("dex_no")
+  type      String
+  rarity    String
+  favorite  Boolean   @default(false)
+  img       String
+  caughtAt  DateTime  @map("caught_at") @db.Timestamptz(6)
+  updatedAt DateTime  @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([ownerId])
+  @@index([ownerId, dexNo])
+  @@map("cards")
+}

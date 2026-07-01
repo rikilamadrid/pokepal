@@ -10,10 +10,9 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟢 Phase 10 (PWA — installable + offline) complete** — the first shippable
-milestone. Project sliced into 13 phases across four tracks
-(Core app → PWA milestone → Backend → Native).
-**Up next: Phase 11 (Supabase backend & Auth).**
+**🟢 Phase 11 (Supabase backend & Auth) — code + backend verified** (ready to
+merge). Phases 1–10 (Core app + PWA milestone) complete. Project sliced into 13
+phases across four tracks (Core app → PWA milestone → Backend → Native).
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -34,7 +33,7 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 8 | Core | Scan flow (camera → confirm → tag) | `phase-8-scan-spec.md` | ✅ Done |
 | 9 | Core | Favorites & Settings | `phase-9-favorites-settings-spec.md` | ✅ Done |
 | 10 | Milestone | PWA — installable + offline (first release) | `phase-10-pwa-spec.md` | ✅ Done |
-| 11 | Backend | Supabase backend & Auth | `phase-11-supabase-auth-spec.md` | Not started |
+| 11 | Backend | Supabase backend & Auth | `phase-11-supabase-auth-spec.md` | 🟢 Verified |
 | 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | Not started |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
 
@@ -45,8 +44,10 @@ Auth, Storage bucket, RLS owner-only policies) and wire kid-safe sign-in, keepin
 the app fully usable signed-out (local-only). Full requirements:
 @context/features/phase-11-supabase-auth-spec.md
 
-**Open decision before Phase 11:** confirm the kid-safe sign-in method (magic
-link vs social, parent-assisted) given App Store kids-category rules.
+**Sign-in method (locked 2026-07-01):** **magic link (email)** — passwordless,
+no third-party data sharing (best fit for App Store kids-category rules),
+parent-assisted (parent enters their email). Supabase project created by the
+user with step-by-step guidance while the code is scaffolded.
 
 **Manual verification still recommended for Phase 10:** on-device
 Add-to-Home-Screen (iOS Safari) + install prompt (Android/Chrome), a Lighthouse
@@ -252,3 +253,54 @@ verified over HTTP, but a real browser is needed for the SW/install runtime.
   verified manifest (200, `application/manifest+json`, standalone, 4 icons/2
   maskable), `sw.js` (200), every icon (200), and the apple-capable meta. On-device
   install/offline + Lighthouse audit still to be done in a real browser. **Completed.**
+- **2026-07-01** — Chore (uncommitted, on `main`): added
+  `allowedDevOrigins: ["*.trycloudflare.com"]` to `next.config.ts` so the
+  Cloudflare quick tunnel (`npm run dev:mobile`) can load Next's dev resources
+  when testing the camera on a phone. Dev-only; ignored by the static export.
+- **2026-07-01** — Started **Phase 11 (Supabase backend & Auth)**. Marked active
+  in the phase map. Stands up the Supabase backend (Postgres `cards` table via
+  Prisma schema/migrations, Auth, Storage bucket, RLS owner-only policies) and
+  kid-safe sign-in, keeping the app fully usable signed-out (local-only). Spec:
+  @context/features/phase-11-supabase-auth-spec.md. **Open decision:** confirm the
+  kid-safe sign-in method (magic link vs social, parent-assisted) given App Store
+  kids-category rules.
+- **2026-07-01** — Implemented **Phase 11 (Supabase backend & Auth)** code on
+  `feature/phase-11-supabase-auth`. Locked sign-in = **magic link (email)**
+  (passwordless, no third-party sharing, parent-assisted — best fit for App Store
+  kids-category rules). Installed `@supabase/supabase-js` + Prisma. Added a
+  browser-only Supabase client (`src/lib/supabase.ts`) that is gated on env
+  (`isSupabaseConfigured`) so the app stays fully usable local-only when
+  unconfigured; implicit flow + `detectSessionInUrl` parses the magic-link token
+  on load (no server callback — static-export safe). `useAuth`
+  context/provider (`src/hooks/useAuth.tsx`, mounted in `layout.tsx` above
+  `CollectionProvider`) restores + subscribes to the session and exposes
+  `signInWithEmail` / `signOut` / `user` / `ready` / `configured`. Settings
+  **Account** row now: signed-out → opens `SignInSheet` (magic-link dialog, Zod
+  `auth-schema`, "check your email" state); signed-in → shows email + Sign out;
+  unconfigured → "cloud backup unavailable" note. Prisma schema
+  (`prisma/schema.prisma`, `cards` table incl. soft-delete `deleted_at`) +
+  `prisma/supabase-setup.sql` (owner→auth.users FK, RLS owner-only policies,
+  private `card-images` bucket + per-user path policies). `.env.example` (+
+  `.gitignore` `!.env.example`) and a step-by-step `context/supabase-setup.md`.
+  **No data behavior change** (local cards untouched; sync is phase 12).
+  `npm run build` + TypeScript pass; Phase 11 code lints clean (3 pre-existing
+  lint errors remain in the phase-10 `scripts/generate-icons.js`, unrelated).
+  **Remaining before merge:** user creates the Supabase project via
+  `context/supabase-setup.md`, runs the migration + SQL, and verifies sign-in +
+  RLS in a browser.
+- **2026-07-01** — **Phase 11 backend stood up & sign-in verified.** Walked the
+  user through `context/supabase-setup.md` against a live Supabase project.
+  Fixes made while wiring env: percent-encoded the `$` in the DB password inside
+  the connection URLs (un-encoded `$` breaks URL parsing); renamed the env var to
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` to match `src/lib/supabase.ts`; renamed
+  `.env.local` → `.env` (Prisma 7 CLI doesn't auto-load `.env.local`; `.env*` is
+  git-ignored). **Prisma 7 migration path:** Prisma 7.8 no longer accepts
+  `url`/`directUrl` in `schema.prisma` — moved them to a new `prisma.config.ts`
+  (loads `.env` via Node's built-in `process.loadEnvFile`, points migrations at
+  the direct connection) and slimmed the schema `datasource` to just `provider`.
+  Ran `prisma migrate dev --name init_cards` → created
+  `prisma/migrations/20260701212313_init_cards/`; `migrate status` = up to date.
+  Ran `prisma/supabase-setup.sql` in the SQL editor (FK + RLS + `card-images`
+  bucket) — success. Configured Email provider + Redirect URLs
+  (`localhost:3002`). Verified magic-link sign-in end to end in the browser
+  (email shows in the Settings → Account row). **Ready to commit + merge.**

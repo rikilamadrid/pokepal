@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   reactCompiler: true,
+  // Let the Cloudflare quick tunnel (npm run dev:mobile) load Next's dev
+  // resources when testing on a phone. Dev-only; ignored by the static export.
+  allowedDevOrigins: ["*.trycloudflare.com"],
 };
 
 export default nextConfig;

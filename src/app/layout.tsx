@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Lilita_One, Space_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { CollectionProvider } from "@/hooks/useCollection";
+import { AuthProvider } from "@/hooks/useAuth";
 import { ServiceWorkerRegistrar } from "@/components/pwa/ServiceWorkerRegistrar";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
@@ -66,7 +67,9 @@ export default function RootLayout({
       </head>
       <body>
         <ServiceWorkerRegistrar />
-        <CollectionProvider>{children}</CollectionProvider>
+        <AuthProvider>
+          <CollectionProvider>{children}</CollectionProvider>
+        </AuthProvider>
         <Toaster position="top-center" />
       </body>
     </html>
