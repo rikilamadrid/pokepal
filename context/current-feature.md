@@ -10,9 +10,9 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟢 Phase 5 (Home screen) complete.** Project sliced into 13
+**🟢 Phase 6 (Collection screen) complete.** Project sliced into 13
 phases across four tracks (Core app → PWA milestone → Backend → Native).
-**Up next: Phase 6 (Collection screen).**
+**Up next: Phase 7 (Card detail sheet).**
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -28,8 +28,8 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 3 | Core | Card & tile component system | `phase-3-card-system-spec.md` | ✅ Done |
 | 4 | Core | Navigation & screen transitions | `phase-4-navigation-spec.md` | ✅ Done |
 | 5 | Core | Home screen | `phase-5-home-spec.md` | ✅ Done |
-| 6 | Core | Collection screen | `phase-6-collection-spec.md` | **Up next** |
-| 7 | Core | Card detail sheet | `phase-7-detail-sheet-spec.md` | Not started |
+| 6 | Core | Collection screen | `phase-6-collection-spec.md` | ✅ Done |
+| 7 | Core | Card detail sheet | `phase-7-detail-sheet-spec.md` | **Up next** |
 | 8 | Core | Scan flow (camera → confirm → tag) | `phase-8-scan-spec.md` | Not started |
 | 9 | Core | Favorites & Settings | `phase-9-favorites-settings-spec.md` | Not started |
 | 10 | Milestone | PWA — installable + offline (first release) | `phase-10-pwa-spec.md` | Not started |
@@ -37,13 +37,13 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | Not started |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
 
-## Up Next — Phase 6 (Collection screen)
+## Up Next — Phase 7 (Card detail sheet)
 
-Build the Collection screen inside the phase-4 shell: a 2-column grid of all cards
-(newest first) rendered with the phase-3 `CardTile`, an iOS-style search bar that
-filters by name, dex number, or type in real time (120 ms debounce), and a card
-count pill next to the eyebrow label. Full requirements:
-@context/features/phase-6-collection-spec.md
+Build the bottom-sheet card detail modal (opened by tapping any card anywhere):
+full `PokeCard` at the top, a 2×2 stat grid (dex, type, rarity, caught date),
+and Favorite / Release actions that update every screen instantly via the store.
+Wire the `onSelectCard` handler that Home and Collection already pass through.
+Full requirements: @context/features/phase-7-detail-sheet-spec.md
 
 **Open decision before Phase 11:** confirm the kid-safe sign-in method (magic
 link vs social, parent-assisted) given App Store kids-category rules.
@@ -154,3 +154,16 @@ link vs social, parent-assisted) given App Store kids-category rules.
   the Favorites tab; card taps are a no-op until the phase-7 detail sheet.
   `npm run lint` + `npm run build` pass; dev server renders 200. Merged to `main`,
   branch deleted. **Completed.**
+- **2026-07-01** — Implemented **Phase 6 (Collection screen)** on
+  `feature/phase-6-collection`. Built the full searchable grid over the phase-2
+  store and phase-3 `CardTile`: `CollectionScreen` shows a big "Collection" display
+  title, a sticky iOS search bar, an "ALL CARDS ●{n}" count pill (reflects the
+  filter), and a 2-column grid sorted newest-first (`caughtAt` desc) with `×N`
+  duplicate badges + favorite stars derived live via `findDuplicates`. Search
+  filters by name / dex number / type (case-insensitive) through a new reusable
+  `useDebounce` hook (120 ms), and a friendly no-results / empty message covers
+  both an empty collection and a non-matching query. New `SearchBar` component
+  (frosted `.glass` field, leading magnifier, clear `✕` when non-empty). Wired
+  into `AppShell` (replaced the Collection placeholder); card taps stay a no-op
+  until the phase-7 detail sheet. `npm run lint` + `npm run build` pass; dev server
+  renders 200. Merged to `main`, branch deleted. **Completed.**

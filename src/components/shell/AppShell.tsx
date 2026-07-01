@@ -6,6 +6,7 @@ import { TabBar } from "./TabBar";
 import { ScanModal } from "./ScanModal";
 import { TABS, type Tab } from "./tabs";
 import { HomeScreen } from "@/components/screens/HomeScreen";
+import { CollectionScreen } from "@/components/screens/CollectionScreen";
 import { PlaceholderScreen } from "@/components/screens/PlaceholderScreen";
 
 /**
@@ -44,9 +45,7 @@ export function AppShell() {
   // Detail-sheet wiring lands in phase 7; tapping a card is a no-op for now.
   const screens: Record<Tab, React.ReactNode> = {
     home: <HomeScreen onSeeAllFavorites={() => selectTab("favorites")} />,
-    collection: (
-      <PlaceholderScreen title="Collection" note="Grid + search — phase 6" />
-    ),
+    collection: <CollectionScreen />,
     favorites: (
       <PlaceholderScreen title="Favorites" note="Starred cards — phase 9" />
     ),
