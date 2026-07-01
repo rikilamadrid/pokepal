@@ -1,26 +1,194 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
+/* ---------------------------------------------------------------------------
+   Theme mapping — shadcn semantic tokens are driven by PokéPal's palette so the
+   ui primitives (sheet, dialog, input, switch, sonner) render on-brand. Extra
+   PokéPal utilities (surface, ink, red, gold) + fonts are exposed here too.
+--------------------------------------------------------------------------- */
 @theme inline {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "SF Pro Text",
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-mono-space), ui-monospace, monospace;
+  --font-display: var(--font-display-lilita), var(--font-sans);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* PokéPal-specific utilities */
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-ink: var(--text);
+  --color-ink-muted: var(--text-muted);
+  --color-red: var(--red);
+  --color-gold: var(--gold);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ---------------------------------------------------------------------------
+   Light theme (the swap). Dark is default and lives in `.dark` below.
+--------------------------------------------------------------------------- */
+:root {
+  --radius: 1rem;
+
+  /* PokéPal palette — light */
+  --bg: #eceef2;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --line: #dadce3;
+  --text: #1b1c22;
+  --text-muted: #6b6e78;
+  --red: #ff4655;
+  --gold: #ffc857;
+
+  /* shadcn semantic tokens → PokéPal */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface);
+  --popover-foreground: var(--text);
+  --primary: var(--red);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-raised);
+  --secondary-foreground: var(--text);
+  --muted: #f2f3f6;
+  --muted-foreground: var(--text-muted);
+  --accent: #f2f3f6;
+  --accent-foreground: var(--text);
+  --destructive: var(--red);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--red);
+
+  /* Type gradients (theme-independent) */
+  --grad-fire: linear-gradient(160deg, #ffb27a, #ff6a3d);
+  --grad-water: linear-gradient(160deg, #8fd2ff, #2f8fe0);
+  --grad-grass: linear-gradient(160deg, #b6e89a, #4fae4f);
+  --grad-electric: linear-gradient(160deg, #fff0a0, #ffce2e);
+  --grad-psychic: linear-gradient(160deg, #e3bdff, #a85bf0);
+  --grad-rock: linear-gradient(160deg, #e3cf9e, #a9824a);
+}
+
+/* ---------------------------------------------------------------------------
+   Dark theme — default (applied via `.dark` on <html>).
+--------------------------------------------------------------------------- */
+.dark {
+  --bg: #14151a;
+  --surface: #1e2029;
+  --surface-raised: #262934;
+  --line: #323542;
+  --text: #f5f3ec;
+  --text-muted: #8d909c;
+  --red: #ff4655;
+  --gold: #ffc857;
+
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--text);
+  --primary: var(--red);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-raised);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-raised);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--surface-raised);
+  --accent-foreground: var(--text);
+  --destructive: var(--red);
+  --border: var(--line);
+  --input: #3a3d4a;
+  --ring: var(--red);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    /* lock the app to a phone-shaped, non-scrolling frame */
+    height: 100%;
+    overscroll-behavior: none;
+  }
+  body {
+    @apply bg-background text-foreground;
+    height: 100%;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---------------------------------------------------------------------------
+   PokéPal utilities
+--------------------------------------------------------------------------- */
+@layer utilities {
+  /* Frosted-glass surfaces (navbar / tab bar / sheets) */
+  .glass {
+    background: color-mix(in srgb, var(--surface) 72%, transparent);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+
+  /* Safe-area insets */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Display + mono type helpers */
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  /* iOS-style press response on tappable elements */
+  .press {
+    transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .press:active {
+    transform: scale(0.96);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .press,
+    .press:active {
+      transition: none;
+      transform: none;
+    }
+  }
 }
