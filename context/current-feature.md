@@ -10,9 +10,9 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟢 Phase 3 (Card & tile component system) complete.** Project sliced into 13
+**🟢 Phase 4 (Navigation & screen transitions) complete.** Project sliced into 13
 phases across four tracks (Core app → PWA milestone → Backend → Native).
-**Up next: Phase 4 (Navigation & screen transitions).**
+**Up next: Phase 5 (Home screen).**
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -26,8 +26,8 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 1 | Core | Foundation — setup, static export, tokens & static shell | `phase-1-foundation-spec.md` | ✅ Done |
 | 2 | Core | Data model & local-first storage layer | `phase-2-data-storage-spec.md` | ✅ Done |
 | 3 | Core | Card & tile component system | `phase-3-card-system-spec.md` | ✅ Done |
-| 4 | Core | Navigation & screen transitions | `phase-4-navigation-spec.md` | **Up next** |
-| 5 | Core | Home screen | `phase-5-home-spec.md` | Not started |
+| 4 | Core | Navigation & screen transitions | `phase-4-navigation-spec.md` | ✅ Done |
+| 5 | Core | Home screen | `phase-5-home-spec.md` | **Up next** |
 | 6 | Core | Collection screen | `phase-6-collection-spec.md` | Not started |
 | 7 | Core | Card detail sheet | `phase-7-detail-sheet-spec.md` | Not started |
 | 8 | Core | Scan flow (camera → confirm → tag) | `phase-8-scan-spec.md` | Not started |
@@ -37,13 +37,13 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | Not started |
 | 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
 
-## Up Next — Phase 4 (Navigation & screen transitions)
+## Up Next — Phase 5 (Home screen)
 
-Wire the phase-1 shell into a working tab router: Home / Collection / Favorites /
-Settings screens with the cross-fade + lift transition, active-tab state, Scan
-opening a modal (not a tab), tap-active-tab-to-scroll-top, and the navbar
-title/border behavior. Full requirements:
-@context/features/phase-4-navigation-spec.md
+Build the real Home screen inside the phase-4 shell: the hero (latest catch) as a
+floating/tilting `PokeCard` with holo sweep, the Favorites row (horizontal scroll,
+capped at 8, "See all" → Favorites tab), and the Duplicates row — all driven by
+the phase-2 store and rendered with the phase-3 card components. Full
+requirements: @context/features/phase-5-home-spec.md
 
 **Open decision before Phase 11:** confirm the kid-safe sign-in method (magic
 link vs social, parent-assisted) given App Store kids-category rules.
@@ -123,3 +123,19 @@ link vs social, parent-assisted) given App Store kids-category rules.
   brief seed-data preview on Home. Removed the temporary phase-2 `StoreProof`
   surface (Home is back to the display-only placeholder until phase 5).
   `npm run lint` + `npm run build` pass. **Completed.**
+- **2026-06-30** — Implemented **Phase 4 (Navigation & screen transitions)** on
+  `feature/phase-4-navigation`. Turned the static shell into a client-side
+  navigator: `AppShell` (now `"use client"`) owns the active tab, Scan-modal, and
+  scroll-aware-border state; all four screens stay mounted in a relative `<main>`
+  and cross-fade via a new `.screen` utility (`opacity` + `translateY(6px)→0` over
+  280ms, instant under `prefers-reduced-motion`; only the active screen is visible
+  and interactive). Shared `tabs.ts` (Tab type + config). `NavBar` shows
+  the wordmark on Home / a centered inline title elsewhere and reveals its hairline
+  border once the active screen scrolls past 4px. `TabBar` wired: tabs switch
+  screens (active in `--red`, `aria-current`, `:focus-visible` rings), tapping the
+  active tab smooth-scrolls it to top, and the center Scan puck opens a placeholder
+  `ScanModal` bottom sheet (Esc/backdrop dismiss; real flow phase 8) and is never
+  active. Screen bodies: `HomeScreen` + a reusable `PlaceholderScreen` for
+  Collection/Favorites/Settings. `page.tsx` now just renders `<AppShell />`.
+  `npm run lint` + `npm run build` pass; dev server renders 200 with all tabs +
+  four stacked screens. **Completed.**

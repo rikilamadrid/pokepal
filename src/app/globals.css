@@ -192,6 +192,33 @@
     }
   }
 
+  /* Stacked screens — only the active one is visible + interactive. Cross-fades
+     with a subtle lift; instant swap under reduced motion. */
+  .screen {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition:
+      opacity 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .screen[data-active="false"] {
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+  }
+  .screen[data-active="true"] {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .screen {
+      transition: none;
+    }
+  }
+
   /* Holo foil sweep — the one earned decorative animation (rarity: "holo").
      Applied to an inset overlay inside an overflow-hidden art panel. */
   .holo-sweep {

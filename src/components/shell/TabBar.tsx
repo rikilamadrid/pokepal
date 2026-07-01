@@ -1,18 +1,21 @@
-import { House, LayoutGrid, Star, Settings } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Pokeball } from "./Pokeball";
+import { TABS, type Tab } from "./tabs";
 
 interface TabItemProps {
   icon: LucideIcon;
   label: string;
-  active?: boolean;
+  active: boolean;
+  onClick: () => void;
 }
 
-function TabItem({ icon: Icon, label, active }: TabItemProps) {
+function TabItem({ icon: Icon, label, active, onClick }: TabItemProps) {
   return (
     <button
       type="button"
-      className={`press flex flex-col items-center gap-1 py-1 ${
+      aria-current={active ? "page" : undefined}
+      onClick={onClick}
+      className={`press flex flex-col items-center gap-1 rounded-lg py-1 outline-none focus-visible:ring-2 focus-visible:ring-red ${
         active ? "text-red" : "text-ink-muted"
       }`}
     >
@@ -24,14 +27,15 @@ function TabItem({ icon: Icon, label, active }: TabItemProps) {
   );
 }
 
-/** Raised center Pokéball puck that opens Scan. Static in phase 1. */
-function ScanPuck() {
+/** Raised center Pokéball puck that opens the Scan modal (never marked active). */
+function ScanPuck({ onScan }: { onScan: () => void }) {
   return (
     <div className="flex flex-col items-center">
       <button
         type="button"
         aria-label="Scan a card"
-        className="press -mt-6 grid h-14 w-14 place-items-center rounded-full bg-surface shadow-lg ring-4 ring-background"
+        onClick={onScan}
+        className="press -mt-6 grid h-14 w-14 place-items-center rounded-full bg-surface shadow-lg outline-none ring-4 ring-background focus-visible:ring-red"
       >
         <Pokeball className="h-12 w-12" />
       </button>
@@ -42,19 +46,40 @@ function ScanPuck() {
   );
 }
 
+interface TabBarProps {
+  activeTab: Tab;
+  onSelect: (tab: Tab) => void;
+  onScan: () => void;
+}
+
 /**
- * Bottom tab bar (frosted glass). Phase 1: static, Home marked active.
- * Real navigation + tap behavior land in phase 4.
+ * Bottom tab bar (frosted glass). Tabs switch the active screen (tapping the
+ * active tab scrolls it to top); the center Scan puck opens the Scan modal.
  */
-export function TabBar() {
+export function TabBar({ activeTab, onSelect, onScan }: TabBarProps) {
+  const [home, collection, favorites, settings] = TABS;
   return (
     <nav className="glass pb-safe sticky bottom-0 z-20 shrink-0 border-t border-border/60">
       <div className="grid grid-cols-5 items-end px-2 pt-2">
-        <TabItem icon={House} label="Home" active />
-        <TabItem icon={LayoutGrid} label="Cards" />
-        <ScanPuck />
-        <TabItem icon={Star} label="Faves" />
-        <TabItem icon={Settings} label="Settings" />
+        {[home, collection].map((t) => (
+          <TabItem
+            key={t.id}
+            icon={t.icon}
+            label={t.label}
+            active={activeTab === t.id}
+            onClick={() => onSelect(t.id)}
+          />
+        ))}
+        <ScanPuck onScan={onScan} />
+        {[favorites, settings].map((t) => (
+          <TabItem
+            key={t.id}
+            icon={t.icon}
+            label={t.label}
+            active={activeTab === t.id}
+            onClick={() => onSelect(t.id)}
+          />
+        ))}
       </div>
     </nav>
   );
