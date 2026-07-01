@@ -1,7 +1,6 @@
 import { AppShell } from "@/components/shell/AppShell";
-import { StoreProof } from "@/components/home/StoreProof";
 
-/** A static placeholder tile for the display-only phase-1 shell. */
+/** A static placeholder tile for the display-only shell (real Home is phase 5). */
 function PlaceholderTile({ className = "" }: { className?: string }) {
   return (
     <div
@@ -11,16 +10,14 @@ function PlaceholderTile({ className = "" }: { className?: string }) {
 }
 
 /**
- * Phase 1 Home screen — display only. Validates navbar/tab-bar spacing, scroll,
- * and safe areas with placeholder content. Real content lands in phase 5.
+ * Home screen — display-only placeholder that validates navbar/tab-bar spacing,
+ * scroll, and safe areas. Real content (hero + favorites/duplicates rows built
+ * from the store using the phase-3 card components) lands in phase 5.
  */
 export default function Home() {
   return (
     <AppShell>
       <div className="flex flex-col gap-8 px-5 pb-8 pt-5">
-        {/* Temporary phase-2 store proof — removed when phase 5 builds Home */}
-        <StoreProof />
-
         {/* Latest catch (hero placeholder) */}
         <section className="flex flex-col gap-3">
           <p className="eyebrow">Latest Catch</p>
