@@ -51,7 +51,7 @@ new product features — packaging only. Full requirements:
 
 **Split of work — repo (Claude) vs. machine/devices (user):**
 - **In-repo (this branch):** install `@capacitor/core` + `@capacitor/cli`;
-  `capacitor.config.ts` (`webDir: 'out'`, app id `com.pokepal.app`, name PokéPal);
+  `capacitor.config.ts` (`webDir: 'out'`, app id `com.rikilamadrid.pokepal`, name PokéPal);
   implement the phase-8 camera adapter's **native branch** with `@capacitor/camera`
   (capture + library pick → image the compress util consumes; web keeps
   `getUserMedia`); `@capacitor/status-bar` wiring; `@capacitor/assets` config to
@@ -65,7 +65,9 @@ new product features — packaging only. Full requirements:
   webview, iPad layout/orientation checks, TestFlight/internal-testing builds,
   store listings + submission. Can't be done from this environment.
 
-**Design decisions (locked 2026-07-01):** app id `com.pokepal.app`; device family
+**Design decisions (locked 2026-07-01):** app id `com.rikilamadrid.pokepal`
+(renamed 2026-07-02 from `com.pokepal.app` for App Store Connect registration);
+device family
 iPhone + iPad; native camera behind the existing `camera.ts` adapter (no caller
 changes); denial still falls back to upload / generated art.
 
@@ -401,3 +403,17 @@ changes); denial still falls back to upload / generated art.
   iOS — once membership is Active: pick Team → Archive → Upload → TestFlight →
   submit. **Still TODO:** add `pokepal://auth-callback` to Supabase Redirect URLs;
   Android project (`cap add android`) not yet scaffolded.
+- **2026-07-02** — **Apple Developer enrollment cleared; prepping first TestFlight
+  build.** App Store Connect app record now exists ("PokéPal - Collection", iOS
+  1.0 Prepare for Submission). **Renamed the bundle id `com.pokepal.app` →
+  `com.rikilamadrid.pokepal`** across `capacitor.config.ts`, the Xcode project
+  (both build configs), `Info.plist` `CFBundleURLName`, `NATIVE.md`, and the
+  current-feature active-spec references (history log entries left as-written).
+  Set `DEVELOPMENT_TEAM = ZFRA75ZMAG` for automatic signing. Added
+  `ITSAppUsesNonExemptEncryption = false` to `Info.plist` so TestFlight uploads
+  skip the export-compliance prompt (app uses only exempt HTTPS). Ran
+  `npm run build` + `npx cap sync ios` (needs `LANG=en_US.UTF-8` for CocoaPods)
+  to stage the latest web bundle for archiving. **Next (user, in Xcode):**
+  Any iOS Device → Product → Archive → Distribute → App Store Connect → Upload →
+  TestFlight internal testing → install via TestFlight on device. Reminder: add
+  `pokepal://auth-callback` to Supabase Redirect URLs before native sign-in.

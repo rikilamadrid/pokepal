@@ -26,7 +26,7 @@ store submission. No new product features live here — it's packaging only.
 - `next build` runs the Next.js **static export** (`output: 'export'`, set in
   phase 1) and writes the app to `out/`.
 - `capacitor.config.ts` points Capacitor at `out/` (`webDir`), with app id
-  `com.pokepal.app` and name `PokéPal`.
+  `com.rikilamadrid.pokepal` and name `PokéPal`.
 - `npx cap sync` copies `out/` into the native `ios/` and `android/` projects and
   installs native plugin pods/gradle deps.
 - There is **no Next.js server** in the shipped app — all backend access is the
@@ -85,7 +85,7 @@ Do these once in the generated projects (they persist across `cap sync`; only
   _"PokéPal lets you pick a card photo from your library."_
 - **Deep link for magic-link auth** (phase 11): add a URL scheme (e.g.
   `pokepal`) under _URL Types_, and set the Supabase **Redirect URL** to it (see
-  Auth below). Signing team + bundle id `com.pokepal.app` under _Signing &
+  Auth below). Signing team + bundle id `com.rikilamadrid.pokepal` under _Signing &
   Capabilities_.
 - **Device family:** iPhone **and** iPad. **Orientation:** portrait (the shell is
   a centered phone-width column; verify it's centered, not stretched, on iPad).
@@ -95,7 +95,7 @@ Do these once in the generated projects (they persist across `cap sync`; only
   is handled by `@capacitor/camera`).
 - **Deep link:** add an `<intent-filter>` for the auth redirect scheme/host on the
   main activity.
-- `applicationId` = `com.pokepal.app`; set `versionCode` / `versionName`.
+- `applicationId` = `com.rikilamadrid.pokepal`; set `versionCode` / `versionName`.
 
 ### Both — safe areas & status bar
 `NativeInit` (`src/components/native/NativeInit.tsx`) sets a dark status-bar style
@@ -126,7 +126,7 @@ inlined into the static bundle Capacitor ships.
 
 | Item | Notes |
 | --- | --- |
-| **Bundle id** | `com.pokepal.app` (iOS + Android must match the config) |
+| **Bundle id** | `com.rikilamadrid.pokepal` (iOS + Android must match the config) |
 | **Versioning** | Bump `package.json` `version`; set iOS `CFBundleShortVersionString`/build and Android `versionName`/`versionCode` per release |
 | **Privacy / data safety** | Declare: account **email** (Supabase Auth) and **card photos** (Supabase Storage). No ads, no tracking, no third-party sharing. |
 | **Age rating** | Kids audience — review Apple's _Kids Category_ and Google's _Designed for Families_ rules (parent-assisted magic-link sign-in was chosen to fit these) |

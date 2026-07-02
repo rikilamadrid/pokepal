@@ -6,7 +6,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * → open in Xcode / Android Studio. See NATIVE.md.
  */
 const config: CapacitorConfig = {
-  appId: "com.pokepal.app",
+  appId: "com.rikilamadrid.pokepal",
   appName: "PokéPal",
   // Next.js `output: 'export'` writes the static bundle here (phase 1).
   webDir: "out",
