@@ -37,7 +37,10 @@ interface CollectionContextValue {
   cards: Card[];
   /** Soft-delete tombstones (id → deletedAt ISO) for sync propagation. */
   tombstones: Tombstones;
-  /** True until the persisted store has rehydrated (SSR-safe). */
+  /**
+   * Always true so the static export renders a visible shell before hydration.
+   * Persisted cards still hydrate on mount and replace the safe empty state.
+   */
   ready: boolean;
   addCard: (input: NewCard) => Card;
   toggleFavorite: (id: string) => void;
@@ -56,8 +59,8 @@ export function CollectionProvider({
 }) {
   const [cards, setCards] = useState<Card[]>([]);
   const [tombstones, setTombstones] = useState<Tombstones>({});
-  const [ready, setReady] = useState(false);
-  // avoid persisting the empty pre-hydration state over real data
+  const ready = true;
+  // Avoid persisting the empty pre-hydration state over real data.
   const hydrated = useRef(false);
 
   // Rehydrate from localStorage once on mount; seed on empty. localStorage is
@@ -67,12 +70,11 @@ export function CollectionProvider({
   useEffect(() => {
     const stored = readCollection();
     const initial = stored && stored.length > 0 ? stored : createSeedCards();
-    if (!stored || stored.length === 0) writeCollection(initial);
+    writeCollection(initial);
     hydrated.current = true;
     /* eslint-disable react-hooks/set-state-in-effect -- one-shot hydration; see comment above */
     setCards(initial);
     setTombstones(readTombstones());
-    setReady(true);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
