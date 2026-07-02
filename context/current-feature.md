@@ -41,6 +41,7 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 15 | Enhancement | Expanded type system (+ card stage) | `phase-15-type-system-spec.md` | Not started |
 | 16 | Enhancement | Account & privacy hardening (account-switch fix) | `phase-16-account-privacy-spec.md` | Not started |
 | 17 | Enhancement | AI card auto-recognition (premium) | `phase-17-ai-recognition-spec.md` | Not started |
+| — | Infra | Web deploy — GitHub Actions CI + Vercel (portfolio live URL) | `DEPLOY.md` | 🟡 Active |
 
 ## Up Next — Phase 13 (Native packaging — Capacitor)
 
@@ -417,3 +418,18 @@ changes); denial still falls back to upload / generated art.
   Any iOS Device → Product → Archive → Distribute → App Store Connect → Upload →
   TestFlight internal testing → install via TestFlight on device. Reminder: add
   `pokepal://auth-callback` to Supabase Redirect URLs before native sign-in.
+- **2026-07-02** — Started **Web deploy (GitHub Actions CI + Vercel)** on
+  `feature/ci-cd-vercel` — infra task to put a live URL on the portfolio. Chosen
+  shape: GitHub Actions runs the lint+build **quality gate**; Vercel's native Git
+  integration is the **deployer** (prod on `main`, preview per PR) — no Vercel CLI
+  or GitHub secrets. **Made CI green first:** scoped `ios/**`, `android/**`, and
+  `scripts/**` (Capacitor shell + Node CommonJS build utilities — 55 lint errors)
+  out of ESLint via `globalIgnores` in `eslint.config.mjs`; `npm run lint` now
+  exits 0. Added `.github/workflows/ci.yml` (push/PR to `main`; Node 20, `npm ci`,
+  lint, build; concurrency-cancels superseded runs; builds **without** Supabase
+  env on purpose to prove the local-first fallback). Added `DEPLOY.md` (Vercel
+  import, `NEXT_PUBLIC_SUPABASE_*` env in all 3 environments, Supabase Redirect-URL
+  entries for the Vercel domain + PR previews). Verified: build passes with env
+  removed (local-first gating holds); lint clean. **Remaining (user, dashboards —
+  not doable from this env):** import repo in Vercel, set the two env vars, add the
+  Vercel domain to Supabase Auth URLs, then push to deploy.
