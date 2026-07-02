@@ -10,10 +10,10 @@ Overview: @context/project-overview.md · Roadmap: @context/features/feature-roa
 
 ## Status
 
-**🟢 Phase 12 (Cloud sync) — merged; browser verification pending.** Phases 1–12
-code-complete (Core app + PWA milestone + Supabase backend/auth + cloud sync).
-Project sliced into 13 phases across four tracks (Core app → PWA milestone →
-Backend → Native).
+**🟡 Phase 13 (Native packaging — Capacitor) — active.** Phases 1–12 complete &
+verified (Core app + PWA milestone + Supabase backend/auth + cloud sync). Project
+sliced into 13 phases across four tracks (Core app → PWA milestone → Backend →
+Native) plus enhancement phases 14–17.
 
 Locked decisions (2026-06-30): **Supabase** backend (Postgres + Auth + Storage,
 RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
@@ -35,42 +35,39 @@ RLS; Prisma owns schema/migrations, runtime via Supabase client SDK) and
 | 9 | Core | Favorites & Settings | `phase-9-favorites-settings-spec.md` | ✅ Done |
 | 10 | Milestone | PWA — installable + offline (first release) | `phase-10-pwa-spec.md` | ✅ Done |
 | 11 | Backend | Supabase backend & Auth | `phase-11-supabase-auth-spec.md` | 🟢 Verified |
-| 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | ✅ Done (browser verify pending) |
-| 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | Not started |
+| 12 | Backend | Cloud sync (local ↔ Supabase) | `phase-12-cloud-sync-spec.md` | 🟢 Verified |
+| 13 | Native | Native packaging — Capacitor iOS/iPad + Android | `phase-13-native-capacitor-spec.md` | 🟡 Active |
 | 14 | Enhancement | Scan capture quality (relaxed viewfinder, focus) | `phase-14-scan-capture-spec.md` | Not started |
 | 15 | Enhancement | Expanded type system (+ card stage) | `phase-15-type-system-spec.md` | Not started |
 | 16 | Enhancement | Account & privacy hardening (account-switch fix) | `phase-16-account-privacy-spec.md` | Not started |
 | 17 | Enhancement | AI card auto-recognition (premium) | `phase-17-ai-recognition-spec.md` | Not started |
 
-## Up Next — Phase 12 (Cloud sync)
+## Up Next — Phase 13 (Native packaging — Capacitor)
 
-Connect the local-first store (phase 2) to the Supabase backend (phase 11) with a
-background sync engine: local changes push up, remote changes pull down, images
-upload to Storage. Full requirements: @context/features/phase-12-cloud-sync-spec.md
+Wrap the finished static build (`out/`) in **Capacitor** to ship native
+iPhone/iPad (App Store) + Android (Play Store) from the same React codebase. No
+new product features — packaging only. Full requirements:
+@context/features/phase-13-native-capacitor-spec.md
 
-**Design decisions (locked 2026-07-01):**
-- **Deletions → tombstones** in a separate localStorage key (`collection:tombstones`,
-  `id → deletedAt`), so existing `cards` selectors are untouched. `releaseCard` /
-  `releaseAll` record tombstones; sync propagates them as `deleted_at` soft-deletes.
-- **Reconciliation:** full-state last-writer-wins by `updatedAt` (a tombstone's
-  `deletedAt` is its version). Local-only → insert cloud; cloud-only → insert local;
-  conflict → newest wins; delete → propagate without resurrecting.
-- **Images:** generated-SVG data-URIs stored inline in the row; captured JPEGs
-  upload to `card-images/{userId}/{cardId}.jpg` and the row stores the *path*
-  (private bucket → signed URL on pull; the capturing device keeps its data-URI for
-  offline). `collection:uploaded` id-set prevents re-uploading on favorite edits.
-- **First-sign-in adoption:** stamp `ownerId` on local (signed-out) cards and push
-  them, merging rather than wiping. Seed ids are deterministic (`seed-N`) so the
-  same account on two devices dedupes by id.
-- **Triggers:** sign-in, window focus, reconnect (`online`), debounced-after-change.
-  No realtime (spec optional). Full-state sync doubles as the offline queue.
-- **Status UI:** a Settings row — "Backed up · {time}" / "Syncing…" / "Offline" /
-  error + Retry.
+**Split of work — repo (Claude) vs. machine/devices (user):**
+- **In-repo (this branch):** install `@capacitor/core` + `@capacitor/cli`;
+  `capacitor.config.ts` (`webDir: 'out'`, app id `com.pokepal.app`, name PokéPal);
+  implement the phase-8 camera adapter's **native branch** with `@capacitor/camera`
+  (capture + library pick → image the compress util consumes; web keeps
+  `getUserMedia`); `@capacitor/status-bar` wiring; `@capacitor/assets` config to
+  generate icon/splash sets from the phase-10 Pokéball icon; a **`NATIVE.md`** with
+  the build → `cap sync` → Xcode/Android Studio → submit steps + store-readiness
+  checklist (bundle ids, versioning, privacy/data-safety, age rating, deep-link
+  auth callback).
+- **User's machine/devices (needs Xcode, Android Studio, real devices, Apple/Google
+  dev accounts):** `npx cap add ios` / `add android`, on-device runs, native camera
+  permission copy in Xcode/Android manifests, deep-link/magic-link callback in the
+  webview, iPad layout/orientation checks, TestFlight/internal-testing builds,
+  store listings + submission. Can't be done from this environment.
 
-**Manual verification still recommended for Phase 10:** on-device
-Add-to-Home-Screen (iOS Safari) + install prompt (Android/Chrome), a Lighthouse
-"Installable" audit, and an offline toggle — the build + all PWA assets/meta were
-verified over HTTP, but a real browser is needed for the SW/install runtime.
+**Design decisions (locked 2026-07-01):** app id `com.pokepal.app`; device family
+iPhone + iPad; native camera behind the existing `camera.ts` adapter (no caller
+changes); denial still falls back to upload / generated art.
 
 ## Notes
 
@@ -355,3 +352,30 @@ verified over HTTP, but a real browser is needed for the SW/install runtime.
   file-sync-service `" 2"` duplicate files. **Code-complete; browser verification
   still pending** (push/pull on a second device, image upload + signed-URL display,
   offline flush on reconnect, first-sign-in adoption, delete propagation).
+- **2026-07-01** — **Phase 12 verified in-browser** (push/pull on a second
+  session, image upload + signed-URL display, offline flush, first-sign-in
+  adoption, delete propagation all confirmed working) → marked 🟢 Verified.
+- **2026-07-01** — Started **Phase 13 (Native packaging — Capacitor)** on
+  `feature/phase-13-native-capacitor`; implemented the **in-repo** portion.
+  **Toolchain pinned to Capacitor 7** (the v8 CLI requires Node ≥ 22; project is
+  Node 20). Installed `@capacitor/{core,camera,status-bar,splash-screen}` +
+  dev `@capacitor/{cli,assets}`. `capacitor.config.ts` — app id `com.pokepal.app`,
+  name PokéPal, `webDir: 'out'` (phase-1 static export), dark `backgroundColor` +
+  splash config. **Native camera** behind the existing phase-8 seam: `camera.ts`
+  gained `isNativeCamera()` (Capacitor `isNativePlatform`) + `takeNativePhoto()`
+  (dynamically imported `@capacitor/camera` → JPEG data URI the compress util
+  consumes); `Viewfinder` split into `WebViewfinder` (unchanged live-stream path)
+  and `NativeViewfinder` (OS camera / library buttons, cancel/deny stays on step)
+  — **no caller changes**, upload/generated-art fallback intact. `NativeInit`
+  (mounted in `layout.tsx`, no-op on web) sets a dark status-bar style + hides the
+  splash on first paint via dynamically-imported plugins. **Icons/splash:**
+  refactored `scripts/generate-icons.js` to export its Pokéball renderer;
+  `scripts/generate-native-assets.js` (npm `native:assets`) emits the 1024px icon
+  + 2732px splash sources into `assets/` for `@capacitor/assets`. Added npm
+  scripts `native:sync|ios|android`. **`NATIVE.md`** documents the full flow
+  (prereqs, `cap add`, permission strings, deep-link auth callback, iPad support,
+  store-readiness checklist, on-device verification, troubleshooting).
+  `npm run build` + TypeScript pass; new/changed files lint clean. **Remaining
+  (user's machine/devices — not doable from this env):** `npx cap add ios/android`,
+  Xcode/Android Studio config (permission copy, deep-link scheme, signing), real
+  iPhone/iPad/Android runs, TestFlight/internal-testing builds, store submission.

@@ -7,9 +7,17 @@
     "dev:mobile": "bash scripts/mobile-dev.sh",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "native:assets": "node scripts/generate-native-assets.js",
+    "native:sync": "next build && npx cap sync",
+    "native:ios": "next build && npx cap sync ios && npx cap open ios",
+    "native:android": "next build && npx cap sync android && npx cap open android"
   },
   "dependencies": {
+    "@capacitor/camera": "^7.0.5",
+    "@capacitor/core": "^7.6.7",
+    "@capacitor/splash-screen": "^7.0.5",
+    "@capacitor/status-bar": "^7.0.6",
     "@prisma/client": "^7.8.0",
     "@supabase/supabase-js": "^2.109.0",
     "class-variance-authority": "^0.7.1",
@@ -27,6 +35,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.6.7",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

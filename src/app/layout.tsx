@@ -5,6 +5,7 @@ import { CollectionProvider } from "@/hooks/useCollection";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SyncProvider } from "@/hooks/useSync";
 import { ServiceWorkerRegistrar } from "@/components/pwa/ServiceWorkerRegistrar";
+import { NativeInit } from "@/components/native/NativeInit";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -68,6 +69,7 @@ export default function RootLayout({
       </head>
       <body>
         <ServiceWorkerRegistrar />
+        <NativeInit />
         <AuthProvider>
           <CollectionProvider>
             <SyncProvider>{children}</SyncProvider>
