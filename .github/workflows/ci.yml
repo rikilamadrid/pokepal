@@ -1,0 +1,40 @@
+name: CI
+
+# Quality gate for the PokéPal web app. Vercel's Git integration handles the
+# actual deploy (production on `main`, preview on PRs); this workflow just proves
+# every push and PR lints and builds cleanly.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref (e.g. rapid pushes to a PR).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Lint & build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # Builds without Supabase env vars on purpose: the app is local-first and
+      # stays fully usable unconfigured, so a green build proves that fallback.
+      - name: Build
+        run: npm run build
