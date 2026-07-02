@@ -14,7 +14,10 @@ const config: CapacitorConfig = {
   ios: {
     // Match the dark app canvas so there's no white flash on launch.
     backgroundColor: "#14151a",
-    contentInset: "always",
+    // Leave content-inset adjustment off (Capacitor default) — the app handles
+    // safe areas in CSS via env(safe-area-inset-*); "always" double-counts the
+    // bottom inset and pushes the tab bar up.
+    contentInset: "never",
   },
   android: {
     backgroundColor: "#14151a",
