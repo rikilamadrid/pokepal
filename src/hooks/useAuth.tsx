@@ -8,8 +8,18 @@ import {
   useMemo,
   useState,
 } from "react";
+import { Capacitor } from "@capacitor/core";
 import type { Session, User } from "@supabase/supabase-js";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+
+/**
+ * Deep-link the magic link returns to inside the native app. On the web the
+ * redirect is the page origin (Supabase parses the token on load); on native the
+ * link opens in the system browser and hands back to the app via this custom URL
+ * scheme (registered in Info.plist / AndroidManifest), which we then complete
+ * below by extracting the tokens and setting the session.
+ */
+const NATIVE_AUTH_REDIRECT = "pokepal://auth-callback";
 
 interface AuthContextValue {
   /** True until the persisted session has been restored on load. */
@@ -48,7 +58,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(next);
     });
 
-    return () => sub.subscription.unsubscribe();
+    // Native only: complete sign-in when the OS reopens the app via the
+    // `pokepal://auth-callback#access_token=…&refresh_token=…` deep link. On the
+    // web this is handled by `detectSessionInUrl` on page load instead.
+    let removeDeepLink: (() => void) | undefined;
+    if (Capacitor.isNativePlatform()) {
+      import("@capacitor/app").then(({ App }) => {
+        App.addListener("appUrlOpen", ({ url }) => {
+          const hash = url.split("#")[1];
+          if (!hash) return;
+          const params = new URLSearchParams(hash);
+          const access_token = params.get("access_token");
+          const refresh_token = params.get("refresh_token");
+          if (access_token && refresh_token) {
+            void supabase.auth.setSession({ access_token, refresh_token });
+          }
+        }).then((listener) => {
+          removeDeepLink = () => void listener.remove();
+        });
+      });
+    }
+
+    return () => {
+      sub.subscription.unsubscribe();
+      removeDeepLink?.();
+    };
   }, []);
 
   const signInWithEmail = useCallback(async (email: string) => {
@@ -57,9 +91,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        // Static-export safe: the app's own origin parses the token on load.
-        emailRedirectTo:
-          typeof window !== "undefined" ? window.location.origin : undefined,
+        // Native returns via the custom URL scheme; web parses the token from
+        // the app's own origin on load (static-export safe).
+        emailRedirectTo: Capacitor.isNativePlatform()
+          ? NATIVE_AUTH_REDIRECT
+          : typeof window !== "undefined"
+            ? window.location.origin
+            : undefined,
       },
     });
     if (error) throw error;

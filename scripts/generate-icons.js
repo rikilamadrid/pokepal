@@ -139,14 +139,20 @@ function write(name, size, ratio, transparentBg = false) {
   console.log(`wrote ${name} (${size}px, ${png.length} bytes)`);
 }
 
-// "any" icons — tighter ball, dark bg
-write("icon-192.png", 192, 0.44);
-write("icon-512.png", 512, 0.44);
-// maskable — extra padding so the ball stays inside the 80% safe zone
-write("icon-192-maskable.png", 192, 0.34);
-write("icon-512-maskable.png", 512, 0.34);
-// apple touch icon — iOS masks corners itself; dark bg, medium padding
-write("apple-touch-icon.png", 180, 0.4);
-// favicon
-write("favicon.png", 48, 0.46);
-console.log("done");
+// Reused by scripts/generate-native-assets.js to render Capacitor source assets.
+module.exports = { render, encodePng, BG, BG_CENTER };
+
+// Only emit the PWA icon set when run directly (`node scripts/generate-icons.js`).
+if (require.main === module) {
+  // "any" icons — tighter ball, dark bg
+  write("icon-192.png", 192, 0.44);
+  write("icon-512.png", 512, 0.44);
+  // maskable — extra padding so the ball stays inside the 80% safe zone
+  write("icon-192-maskable.png", 192, 0.34);
+  write("icon-512-maskable.png", 512, 0.34);
+  // apple touch icon — iOS masks corners itself; dark bg, medium padding
+  write("apple-touch-icon.png", 180, 0.4);
+  // favicon
+  write("favicon.png", 48, 0.46);
+  console.log("done");
+}

@@ -1,11 +1,48 @@
+import { Capacitor } from "@capacitor/core";
+
 /**
  * Camera adapter — the single seam between the Scan flow and the platform camera.
- * The web build uses `getUserMedia`; phase 13 swaps in the Capacitor Camera
- * plugin behind this same interface without touching the flow components.
+ * The web build uses a live `getUserMedia` stream + a shutter; native builds
+ * (Capacitor) hand off to the OS camera UI via the Camera plugin and get a photo
+ * back directly. The Scan flow branches on {@link isNativeCamera}; both paths end
+ * by handing a JPEG data URI to the same `onCapture` callback.
  */
 export interface CameraAdapter {
   /** Start a rear-facing video stream. Rejects if unavailable or denied. */
   start(): Promise<MediaStream>;
+}
+
+/** True inside the Capacitor native shell (iOS/Android), false on the web/PWA. */
+export function isNativeCamera(): boolean {
+  return Capacitor.isNativePlatform();
+}
+
+export type NativePhotoSource = "camera" | "library";
+
+/**
+ * Native capture via the Capacitor Camera plugin. Opens the OS camera (or photo
+ * library) and resolves to a JPEG data URI the phase-2 `compressImage` util can
+ * consume. Rejects if the user cancels or denies permission — the Scan flow then
+ * keeps the upload / generated-art fallback. Dynamically imported so the plugin
+ * never enters the web bundle.
+ */
+export async function takeNativePhoto(
+  source: NativePhotoSource = "camera",
+): Promise<string> {
+  const { Camera, CameraResultType, CameraSource } = await import(
+    "@capacitor/camera"
+  );
+  const photo = await Camera.getPhoto({
+    quality: 92,
+    resultType: CameraResultType.DataUrl,
+    source: source === "library" ? CameraSource.Photos : CameraSource.Camera,
+    correctOrientation: true,
+    promptLabelHeader: "Add a card",
+    promptLabelPhoto: "Choose from library",
+    promptLabelPicture: "Take a photo",
+  });
+  if (!photo.dataUrl) throw new Error("No photo returned");
+  return photo.dataUrl;
 }
 
 export const webCameraAdapter: CameraAdapter = {

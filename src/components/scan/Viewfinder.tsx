@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef } from "react";
-import { ImageUp } from "lucide-react";
+import { Camera, ImageUp, Images } from "lucide-react";
 import { useCamera } from "@/hooks/useCamera";
-import { captureFrame } from "@/lib/camera";
+import { captureFrame, isNativeCamera, takeNativePhoto } from "@/lib/camera";
 
 interface ViewfinderProps {
   /** Called with a JPEG data URI once a frame is captured or a file is picked. */
@@ -13,10 +13,71 @@ interface ViewfinderProps {
 }
 
 /**
- * Step 1 — live rear camera feed inside a golden target frame with a shutter.
- * Falls back to a file upload when the camera is unavailable or denied.
+ * Step 1 — capture a card photo. On native (Capacitor) the OS camera / library
+ * handles capture via {@link NativeViewfinder}; on the web it's a live rear feed
+ * inside a golden target frame with a shutter, falling back to file upload when
+ * the camera is unavailable or denied.
  */
 export function Viewfinder({ onCapture, onSkip }: ViewfinderProps) {
+  if (isNativeCamera()) {
+    return <NativeViewfinder onCapture={onCapture} onSkip={onSkip} />;
+  }
+  return <WebViewfinder onCapture={onCapture} onSkip={onSkip} />;
+}
+
+/**
+ * Native capture — hands off to the OS camera / photo library through the
+ * Capacitor Camera plugin. No live preview element; the plugin returns the photo.
+ */
+function NativeViewfinder({ onCapture, onSkip }: ViewfinderProps) {
+  const capture = async (source: "camera" | "library") => {
+    try {
+      onCapture(await takeNativePhoto(source));
+    } catch {
+      // User cancelled or denied — stay on the step so they can retry or skip.
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="grid aspect-[3/4] w-full max-w-[300px] place-items-center rounded-3xl border-2 border-gold/40 bg-black">
+        <Camera className="size-12 text-gold/70" />
+      </div>
+      <p className="mt-3 text-center text-sm text-ink-muted">
+        Snap your card or pick one from your library.
+      </p>
+      <div className="mt-4 flex flex-col items-center gap-3">
+        <button
+          type="button"
+          onClick={() => capture("camera")}
+          className="press flex items-center gap-2 rounded-full bg-red px-6 py-3 font-semibold text-white outline-none focus-visible:ring-2 focus-visible:ring-red"
+        >
+          <Camera className="size-5" /> Take a photo
+        </button>
+        <button
+          type="button"
+          onClick={() => capture("library")}
+          className="press flex items-center gap-2 text-sm font-medium text-ink-muted outline-none hover:underline focus-visible:underline"
+        >
+          <Images className="size-4" /> Choose from library
+        </button>
+        <button
+          type="button"
+          onClick={onSkip}
+          className="press text-sm font-medium text-ink-muted underline-offset-4 outline-none hover:underline focus-visible:underline"
+        >
+          Skip photo &amp; add manually
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Web capture — live rear camera feed inside a golden target frame with a
+ * shutter. Falls back to a file upload when the camera is unavailable or denied.
+ */
+function WebViewfinder({ onCapture, onSkip }: ViewfinderProps) {
   const { videoRef, status } = useCamera();
   const fileRef = useRef<HTMLInputElement>(null);
 
