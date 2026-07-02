@@ -379,3 +379,25 @@ changes); denial still falls back to upload / generated art.
   (user's machine/devices — not doable from this env):** `npx cap add ios/android`,
   Xcode/Android Studio config (permission copy, deep-link scheme, signing), real
   iPhone/iPad/Android runs, TestFlight/internal-testing builds, store submission.
+- **2026-07-02** — **Phase 13 iOS project stood up & verified on-device (sim).**
+  Installed full Xcode 26.6 + CocoaPods (via Homebrew); the initial `pod install`
+  needed `LANG=en_US.UTF-8` (ASCII locale broke CocoaPods' path normalization).
+  Added `@capacitor/{ios,android}` platform packages and `@capacitor/app` (for the
+  native auth deep link). `npx cap add ios` scaffolded `ios/App` (bundle id
+  `com.pokepal.app`, iPhone+iPad, MARKETING_VERSION 1.0/build 1 by default);
+  `capacitor-assets generate` produced the AppIcon + Splash imagesets from the
+  `assets/` sources. **Info.plist:** camera + photo-library (+ add) usage strings
+  and a `CFBundleURLTypes` `pokepal://` scheme. **Native magic-link auth**
+  (phase-11 flow inside the webview): `useAuth` now sends `emailRedirectTo:
+  pokepal://auth-callback` on native and completes sign-in on `@capacitor/app`
+  `appUrlOpen` (parse token hash → `supabase.auth.setSession`); web still uses
+  `detectSessionInUrl`. Committed the `ios/` project (Capacitor's `.gitignore`
+  keeps Pods/build/web-assets out). Verified `xcodebuild` **BUILD SUCCEEDED**
+  against the iOS 26.5 SDK and **ran the app on the iPhone 17 simulator** (Home
+  screen renders, safe areas correct) — signing disabled for the sim build.
+  **Blocked only on Apple:** the user's Apple Developer Program enrollment is
+  *pending review*, so App Store Connect / archive-upload isn't available yet
+  ("Apple Account isn't enabled for iTunes Connect"). No code work remains for
+  iOS — once membership is Active: pick Team → Archive → Upload → TestFlight →
+  submit. **Still TODO:** add `pokepal://auth-callback` to Supabase Redirect URLs;
+  Android project (`cap add android`) not yet scaffolded.
