@@ -16,13 +16,24 @@ import type { ExtractedCardFields, MatchTier, PrintingMatch } from "@/types/scan
  *   number 0.35 · set denominator 0.15 · name similarity 0.30 (scaled)
  *   · HP 0.08 · regulation mark 0.07 · language read off the card 0.05
  *
+ * Identity evidence: same printed number, a name that agrees (similarity
+ * ≥ 0.8), the set denominator when one was read, and no read field that
+ * contradicts the printing (a read HP or regulation mark that differs).
+ *
  * Tiers:
- *   exact     — exactly one candidate has identity evidence: same printed
- *               number, a name that agrees (similarity ≥ 0.8), and the set
- *               denominator when one was read.
+ *   exact     — the language was read off the card and exactly one candidate
+ *               has identity evidence.
  *   ambiguous — candidates exist but none (or more than one) has identity
- *               evidence; ranked, capped at MAX_MATCHES.
+ *               evidence, or the language was not read (lookup then defaults
+ *               to English, which cannot prove a language-qualified printing);
+ *               ranked, capped at MAX_MATCHES.
  *   unmatched — no candidate agrees on number or name; matches is [].
+ *
+ * Two printings at one number/denominator whose names differ only by a suffix
+ * ("Charizard" vs "Charizard ex") both agree on name; a read HP or regulation
+ * mark separates them. Without one the read stays ambiguous: an exact-name
+ * match alone does not break the tie, because a dropped suffix is a plausible
+ * misread.
  *
  * Every match is a printing the catalog returned; the resolver never builds one.
  */
@@ -130,9 +141,11 @@ function scorePrinting(extracted: ExtractedCardFields, printing: CardPrinting): 
     reasons.push(nameScore === 1 ? "name=" : nameScore >= NAME_AGREES ? "name≈" : "name≠");
   }
 
+  let contradicted = false;
   if (extracted.hp !== null && printing.hp !== null) {
     const same = extracted.hp === printing.hp;
     if (same) score += WEIGHTS.hp;
+    else contradicted = true;
     reasons.push(same ? "hp" : "hp≠");
   }
 
@@ -140,6 +153,7 @@ function scorePrinting(extracted: ExtractedCardFields, printing: CardPrinting): 
     const same =
       extracted.regulationMark.trim().toUpperCase() === printing.regulationMark.trim().toUpperCase();
     if (same) score += WEIGHTS.regulationMark;
+    else contradicted = true;
     reasons.push(same ? "regulation" : "regulation≠");
   }
 
@@ -149,7 +163,11 @@ function scorePrinting(extracted: ExtractedCardFields, printing: CardPrinting): 
   }
 
   const identity =
-    numberAgrees && nameScore !== null && nameScore >= NAME_AGREES && (count === null || denominatorAgrees);
+    numberAgrees &&
+    nameScore !== null &&
+    nameScore >= NAME_AGREES &&
+    (count === null || denominatorAgrees) &&
+    !contradicted;
 
   return {
     printing,
@@ -178,8 +196,10 @@ export function rankPrintings(
   if (scored.length === 0) return { tier: "unmatched", matches: [] };
 
   const identities = scored.filter((s) => s.identity);
-  const tier: MatchTier = identities.length === 1 ? "exact" : "ambiguous";
-  const ranked = tier === "exact" ? [identities[0], ...scored.filter((s) => !s.identity)] : scored;
+  const tier: MatchTier =
+    identities.length === 1 && extracted.language !== null ? "exact" : "ambiguous";
+  const ranked =
+    identities.length === 1 ? [identities[0], ...scored.filter((s) => !s.identity)] : scored;
 
   return {
     tier,

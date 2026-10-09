@@ -10,8 +10,8 @@ import type { ExtractedCardFields, MatchTier, PrintingMatch, ScanBatch } from "@
 
 /** A recognition request failed or returned something outside the contract. */
 export class RecognitionError extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
     this.name = "RecognitionError";
   }
 }
@@ -42,14 +42,36 @@ export interface RecognitionTransport {
 
 const ms = z.number().nonnegative();
 
+/** Longest free-text field a transport may return (set code hint, a match reason). */
+export const MAX_TEXT_LENGTH = 200;
+
+const isHttpsUrl = (value: string) => {
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 /** Every transport response is untrusted until it passes this schema. */
 export const recognitionResponseSchema = z.strictObject({
   cards: z.array(
     z
       .strictObject({
-        extracted: extractedCardFieldsSchema,
+        extracted: extractedCardFieldsSchema.refine(
+          (e) => e.setCodeHint === null || e.setCodeHint.length <= MAX_TEXT_LENGTH,
+          { message: `setCodeHint longer than ${MAX_TEXT_LENGTH} characters` },
+        ),
         tier: matchTierSchema,
-        matches: z.array(printingMatchSchema),
+        matches: z.array(
+          printingMatchSchema
+            .refine((m) => m.reasons.every((r) => r.length <= MAX_TEXT_LENGTH), {
+              message: `match reason longer than ${MAX_TEXT_LENGTH} characters`,
+            })
+            .refine((m) => m.printing.imageUrl === null || isHttpsUrl(m.printing.imageUrl), {
+              message: "printing imageUrl must be an https URL",
+            }),
+        ),
       })
       .refine((c) => (c.tier === "unmatched") === (c.matches.length === 0), {
         message: "unmatched ⇔ no matches",

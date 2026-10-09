@@ -103,15 +103,89 @@ describe("resolve — exact", () => {
     expect(requested.some((p) => p.startsWith("/en/cards?"))).toBe(false);
   });
 
-  it("defaults to English when the language was not read, and earns no language weight", async () => {
+  it("looks up English when the language was not read, but caps the tier at ambiguous", async () => {
+    // The es printing has the same name; an unread language cannot prove the en one.
     const calls: string[] = [];
     const r = await resolveChecked(
-      read({ name: "Charizard VMAX", collectorNumber: "20", setOfficialCount: 189 }),
+      read({ name: "Charizard VMAX", collectorNumber: "20", setOfficialCount: 189, hp: 330, regulationMark: "D" }),
       createMemoryCatalog(undefined, calls),
     );
     expect(calls[0]).toBe("number en 20/189");
-    expect(r.tier).toBe("exact");
+    expect(r.tier).toBe("ambiguous");
+    // The identity candidate still ranks first, without language weight.
+    expect(r.matches[0].printing.id).toBe("tcgdex:en:swsh3-20");
     expect(r.matches[0].reasons).not.toContain("language");
+  });
+});
+
+describe("resolve — similar names at one number/denominator", () => {
+  // Two printings at 006/165 whose names differ only by a suffix, with different HP.
+  const base = recordedPrinting("en", "swsh3-20");
+  const at006 = (id: string, name: string, hp: number): CardPrinting => ({
+    ...base,
+    id: `tcgdex:en:${id}`,
+    providerCardId: id,
+    name,
+    collectorNumber: "006",
+    hp,
+    regulationMark: null,
+    set: { ...base.set, id: id.split("-")[0], officialCount: 165 },
+  });
+  const plain = at006("ecard1-6", "Charizard", 120);
+  const ex = at006("sv03.5-006", "Charizard ex", 330);
+  const both = [plain, ex];
+
+  it("both names agree (similarity >= 0.8), so a name alone cannot separate them", () => {
+    expect(nameSimilarity("Charizard", "Charizard ex")).toBeGreaterThanOrEqual(0.8);
+    const r = rankPrintings(read({ name: "Charizard ex", collectorNumber: "006", setOfficialCount: 165, language: "en" }), both);
+    expect(r.tier).toBe("ambiguous");
+    expect(r.matches[0].printing.id).toBe(ex.id);
+  });
+
+  it("a full read of the ex card is exact: the other printing's HP contradicts it", () => {
+    const r = rankPrintings(
+      read({ name: "Charizard ex", collectorNumber: "006", setOfficialCount: 165, hp: 330, language: "en" }),
+      both,
+    );
+    expect(r.tier).toBe("exact");
+    expect(ids(r)).toEqual([ex.id, plain.id]);
+    expect(r.matches[1].reasons).toContain("hp≠");
+  });
+
+  it("a full read of the base card is exact the other way", () => {
+    const r = rankPrintings(
+      read({ name: "Charizard", collectorNumber: "6", setOfficialCount: 165, hp: 120, language: "en" }),
+      both,
+    );
+    expect(r.tier).toBe("exact");
+    expect(ids(r)).toEqual([plain.id, ex.id]);
+  });
+
+  it("a dropped suffix is not trusted: 'Charizard' with HP 330 resolves to the ex card", () => {
+    const r = rankPrintings(
+      read({ name: "Charizard", collectorNumber: "006", setOfficialCount: 165, hp: 330, language: "en" }),
+      both,
+    );
+    expect(r.tier).toBe("exact");
+    expect(r.matches[0].printing.id).toBe(ex.id);
+  });
+
+  it("a contradicting HP removes identity even for a lone candidate", () => {
+    const r = rankPrintings(
+      read({ name: "Charizard ex", collectorNumber: "006", setOfficialCount: 165, hp: 120, language: "en" }),
+      [ex],
+    );
+    expect(r.tier).toBe("ambiguous");
+    expect(r.matches[0].reasons).toContain("hp≠");
+  });
+
+  it("a contradicting regulation mark removes identity", () => {
+    const r = rankPrintings(
+      read({ name: "Charizard VMAX", collectorNumber: "20", setOfficialCount: 189, regulationMark: "F", language: "en" }),
+      [base],
+    );
+    expect(r.tier).toBe("ambiguous");
+    expect(r.matches[0].reasons).toContain("regulation≠");
   });
 });
 
@@ -129,7 +203,7 @@ describe("resolve — ambiguous (same number, different sets)", () => {
   it("is ambiguous when two candidates both have identity evidence", () => {
     const a = recordedPrinting("en", "swsh3-20");
     const twin: CardPrinting = { ...a, id: "tcgdex:en:swsh3x-20", providerCardId: "swsh3x-20", set: { ...a.set, id: "swsh3x" } };
-    const r = rankPrintings(read({ name: "Charizard VMAX", collectorNumber: "20", setOfficialCount: 189 }), [a, twin]);
+    const r = rankPrintings(read({ name: "Charizard VMAX", collectorNumber: "20", setOfficialCount: 189, language: "en" }), [a, twin]);
     expect(r.tier).toBe("ambiguous");
     expect(r.matches).toHaveLength(2);
   });
@@ -245,7 +319,7 @@ describe("resolve — wrong name, right number", () => {
 
   it("does not let a near name override a conflicting set denominator", () => {
     const r = rankPrintings(
-      read({ name: "Charizard VMAX", collectorNumber: "20", setOfficialCount: 73 }),
+      read({ name: "Charizard VMAX", collectorNumber: "20", setOfficialCount: 73, language: "en" }),
       [recordedPrinting("en", "swsh3-20")],
     );
     expect(r.tier).toBe("ambiguous");

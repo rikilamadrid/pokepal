@@ -108,12 +108,61 @@ describe("recognize rejects untrusted transport responses", () => {
     await expect(recognize(photo(), { mode: "batch", transport, prepare: fakePrepare })).rejects.toBeInstanceOf(RecognitionError);
   });
 
+  const timings = { uploadMs: 1, modelMs: 1, resolveMs: 1 };
+  const JPEG_BASE64 = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46]).toString("base64");
+  const LONG_BASE64 = Buffer.from(new Uint8Array(200).map((_, i) => (i * 37) % 251)).toString("base64");
+
+  it.each([
+    ["setCodeHint", { ...card(null), extracted: { ...recorded.extractions[0], setCodeHint: JPEG_BASE64 } }],
+    ["a match reason", { ...card(null), matches: [{ ...card(null).matches[0], reasons: [`number ${JPEG_BASE64}`] }] }],
+    ["the printing name", { ...card(null), matches: [{ ...card(null).matches[0], printing: { ...exact, imageUrl: null, name: LONG_BASE64 } }] }],
+    ["a non-https imageUrl", card("http://assets.example/a.jpg")],
+    ["an imageUrl carrying image base64", card(`https://assets.example/${JPEG_BASE64}`)],
+  ])("refuses raw base64 image bytes or unsafe URLs in %s", async (_where, bad) => {
+    const transport = respond({ cards: [bad], timings });
+    await expect(recognize(photo(), { mode: "batch", transport, prepare: fakePrepare })).rejects.toBeInstanceOf(RecognitionError);
+  });
+
+  it("refuses an oversized setCodeHint", async () => {
+    const bad = { ...card(null), extracted: { ...recorded.extractions[0], setCodeHint: "x ".repeat(150) } };
+    await expect(
+      recognize(photo(), { mode: "batch", transport: respond({ cards: [bad], timings }), prepare: fakePrepare }),
+    ).rejects.toBeInstanceOf(RecognitionError);
+  });
+
+  it("accepts the recorded https TCGdex image URL", async () => {
+    const batch = await recognize(photo(), {
+      mode: "batch",
+      transport: respond({ cards: [card("https://assets.tcgdex.net/en/swsh/swsh3/20")], timings }),
+      prepare: fakePrepare,
+    });
+    expect(batch.candidates).toHaveLength(1);
+  });
+
   it("refuses an unmatched card that still lists matches", async () => {
     const transport = respond({
       cards: [{ ...card(null), tier: "unmatched" }],
       timings: { uploadMs: 1, modelMs: 1, resolveMs: 1 },
     });
     await expect(recognize(photo(), { mode: "batch", transport, prepare: fakePrepare })).rejects.toBeInstanceOf(RecognitionError);
+  });
+});
+
+describe("recognize wraps transport failures", () => {
+  it("turns a catalog lookup failure into a RecognitionError, keeping the cause", async () => {
+    const cause = new Error("TCGdex 503");
+    const catalog = { ...createMemoryCatalog(), findByNumber: async () => Promise.reject(cause) };
+    const transport = createFixtureTransport({ extractions: recorded.extractions, catalog });
+    const error = await recognize(photo(), { mode: "batch", transport, prepare: fakePrepare }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RecognitionError);
+    expect((error as RecognitionError).message).toContain("TCGdex 503");
+    expect((error as RecognitionError).cause).toBe(cause);
+  });
+
+  it("passes a RecognitionError through unchanged", async () => {
+    const original = new RecognitionError("nope");
+    const transport: RecognitionTransport = { recognize: async () => Promise.reject(original) };
+    await expect(recognize(photo(), { mode: "batch", transport, prepare: fakePrepare })).rejects.toBe(original);
   });
 });
 
