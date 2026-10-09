@@ -11,7 +11,8 @@
     "native:assets": "node scripts/generate-native-assets.js",
     "native:sync": "next build && npx cap sync",
     "native:ios": "next build && npx cap sync ios && npx cap open ios",
-    "native:android": "next build && npx cap sync android && npx cap open android"
+    "native:android": "next build && npx cap sync android && npx cap open android",
+    "test": "vitest run"
   },
   "dependencies": {
     "@capacitor/android": "^7.6.7",
@@ -49,6 +50,7 @@
     "eslint-config-next": "16.2.9",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }

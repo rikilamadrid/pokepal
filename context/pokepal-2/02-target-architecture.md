@@ -19,7 +19,7 @@ Three identities, never fused again:
 | Concept | Identity | Answers |
 | --- | --- | --- |
 | `PokemonSpecies` | National Pokédex number | "Which Pokémon is this?" (browse by Pokémon, region) |
-| `CardPrinting` | Catalog printing id (e.g. `tcgdex:swsh3-20`) + language | "Which exact card is this?" (Trade Check, set progress) |
+| `CardPrinting` | Language-qualified catalog printing id (e.g. `tcgdex:es:swsh3-20`) | "Which exact card is this?" (Trade Check, set progress) |
 | `OwnedCard` | Random UUID per physical copy | "How many of this card does Dalí have, which ones are favorites, where are they?" |
 
 `ScanBatch` / `ScanCandidate` are **transient** recognition state. They live in
@@ -40,7 +40,8 @@ export type CardCategory = "pokemon" | "trainer" | "energy";
 /** Physical finish of a copy. A property of the owned copy, not the printing. */
 export type CardFinish = "normal" | "holo" | "reverse" | "firstEdition";
 
-export type CatalogLanguage = "en" | "fr" | "es" | "it" | "pt" | "de" | "ja";
+/** Card languages supported in 2.0 (decision D10). */
+export type CatalogLanguage = "en" | "es" | "ja";
 
 export interface PokemonSpecies {
   dexNo: number;            // National Pokédex number, e.g. 6
@@ -64,7 +65,7 @@ export interface CardSetRef {
 
 /** One exact printed card, as verified against the catalog. Immutable snapshot. */
 export interface CardPrinting {
-  id: string;               // "{provider}:{providerCardId}", e.g. "tcgdex:swsh3-20"
+  id: string;               // "{provider}:{language}:{providerCardId}", e.g. "tcgdex:es:swsh3-20"
   provider: "tcgdex";       // widened only by an approved provider decision
   providerCardId: string;   // "swsh3-20"
   language: CatalogLanguage;
@@ -275,3 +276,18 @@ Nothing in Features 18–23 deletes or rewrites legacy data.
 | D7 | Child privacy | Parental notice before first AI scan; privacy policy names the vision provider; no photo retention | Production gate |
 | D8 | Artwork licensing | Hot-link catalog images only; no redistribution; review before store release | Production gate |
 | D9 | Live DB migration | Apply `owned_cards` migration to the live Supabase project | Gate at ticket 18.3 |
+| D10 | Card languages and printing identity | **Decided 2026-10-09** (see below) | Yes (contract change) |
+
+### Decided
+
+- **D10 — Card languages and printing identity (2026-10-09, human decision on
+  ticket 18.1).** 2.0 supports card languages `en`, `es` and `ja` only:
+  `CatalogLanguage = "en" | "es" | "ja"`. `fr`, `de`, `it` and `pt` are removed
+  from the contract until a later Feature adds them, because TCGdex localizes
+  category and energy-type names per language and each language needs its own
+  recorded mapping. `CardPrinting.id` is language-qualified,
+  `"{provider}:{language}:{providerCardId}"` (e.g. `tcgdex:es:swsh3-20`), so an
+  English and a Spanish copy of the same card are different printings for
+  ownership, duplicate badges and Trade Check. `getPrinting` accepts that form or
+  the bare provider card id. The catalog adapter rejects an unmapped category or
+  energy-type name with `CatalogError` instead of dropping it.

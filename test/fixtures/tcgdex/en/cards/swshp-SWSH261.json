@@ -1,0 +1,143 @@
+{
+  "category": "Pokemon",
+  "id": "swshp-SWSH261",
+  "image": "https://assets.tcgdex.net/en/swsh/swshp/SWSH261",
+  "localId": "SWSH261",
+  "name": "Charizard VMAX",
+  "rarity": "Promo",
+  "set": {
+    "cardCount": {
+      "official": 307,
+      "total": 307
+    },
+    "id": "swshp",
+    "logo": "https://assets.tcgdex.net/en/swsh/swshp/logo",
+    "name": "SWSH Black Star Promos",
+    "symbol": "https://assets.tcgdex.net/univ/swsh/swshp/symbol"
+  },
+  "variants": {
+    "firstEdition": false,
+    "holo": true,
+    "normal": false,
+    "reverse": false,
+    "wPromo": false
+  },
+  "variants_detailed": [
+    {
+      "type": "holo",
+      "size": "standard",
+      "thirdParty": {
+        "cardmarket": 674369,
+        "tcgplayer": 285378
+      },
+      "variantId": "jr7oetx1mqug9",
+      "pricing": {
+        "cardmarket": {
+          "updated": "2026-10-09T09:52:36.585Z",
+          "unit": "EUR",
+          "idProduct": 674369,
+          "avg": 35.88,
+          "low": 24.9,
+          "trend": 50.46,
+          "avg1": 135.33,
+          "avg7": 50.11,
+          "avg30": 38.27,
+          "avg-holo": null,
+          "low-holo": null,
+          "trend-holo": 0,
+          "avg1-holo": null,
+          "avg7-holo": null,
+          "avg30-holo": null
+        },
+        "tcgplayer": {
+          "unit": "USD",
+          "updated": "2026-10-09T09:52:53.029Z",
+          "holofoil": {
+            "productId": 285378,
+            "lowPrice": 31.74,
+            "midPrice": 45.16,
+            "highPrice": 766.07,
+            "marketPrice": 37.63,
+            "directLowPrice": 39.99
+          }
+        }
+      }
+    }
+  ],
+  "dexId": [
+    6
+  ],
+  "hp": 330,
+  "types": [
+    "Fire"
+  ],
+  "evolveFrom": "Charizard V",
+  "stage": "VMAX",
+  "attacks": [
+    {
+      "cost": [
+        "Colorless",
+        "Colorless",
+        "Colorless"
+      ],
+      "name": "Claw Slash",
+      "damage": 100
+    },
+    {
+      "cost": [
+        "Fire",
+        "Fire",
+        "Fire",
+        "Colorless",
+        "Colorless"
+      ],
+      "name": "G-Max Wildfire",
+      "effect": "Discard 2 Energy from this Pokémon.",
+      "damage": 300
+    }
+  ],
+  "weaknesses": [
+    {
+      "type": "Water",
+      "value": "×2"
+    }
+  ],
+  "retreat": 3,
+  "regulationMark": "D",
+  "legal": {
+    "standard": false,
+    "expanded": true
+  },
+  "updated": "2026-09-03T15:19:07Z",
+  "pricing": {
+    "cardmarket": {
+      "updated": "2026-10-09T09:52:36.585Z",
+      "unit": "EUR",
+      "idProduct": 674369,
+      "avg": 35.88,
+      "low": 24.9,
+      "trend": 50.46,
+      "avg1": 135.33,
+      "avg7": 50.11,
+      "avg30": 38.27,
+      "avg-holo": null,
+      "low-holo": null,
+      "trend-holo": 0,
+      "avg1-holo": null,
+      "avg7-holo": null,
+      "avg30-holo": null
+    },
+    "tcgplayer": {
+      "unit": "USD",
+      "updated": "2026-10-09T09:52:53.029Z",
+      "holofoil": {
+        "productId": 285378,
+        "lowPrice": 31.74,
+        "midPrice": 45.16,
+        "highPrice": 766.07,
+        "marketPrice": 37.63,
+        "directLowPrice": 39.99
+      }
+    }
+  }
+}

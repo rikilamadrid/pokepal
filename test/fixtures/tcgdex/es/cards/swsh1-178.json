@@ -1,0 +1,50 @@
+{
+  "category": "Entrenador",
+  "effect": "Descarta las cartas de tu mano y roba 7 cartas.",
+  "id": "swsh1-178",
+  "illustrator": "Yusuke Ohmura",
+  "image": "https://assets.tcgdex.net/es/swsh/swsh1/178",
+  "legal": {
+    "expanded": true,
+    "standard": false
+  },
+  "localId": "178",
+  "name": "Investigación de Profesores",
+  "pricing": {
+    "cardmarket": null,
+    "tcgplayer": null
+  },
+  "rarity": "Holo Rara",
+  "regulationMark": "D",
+  "set": {
+    "cardCount": {
+      "official": 202,
+      "total": 216
+    },
+    "id": "swsh1",
+    "logo": "https://assets.tcgdex.net/es/swsh/swsh1/logo",
+    "name": "Espada y Escudo",
+    "symbol": "https://assets.tcgdex.net/univ/swsh/swsh1/symbol"
+  },
+  "trainerType": "Partidario",
+  "updated": "2026-08-16T22:12:40+01:00",
+  "variants": {
+    "firstEdition": false,
+    "holo": true,
+    "normal": false,
+    "reverse": true,
+    "wPromo": false
+  },
+  "variants_detailed": [
+    {
+      "size": "estándar",
+      "type": "reverse",
+      "variantId": "generated"
+    },
+    {
+      "size": "estándar",
+      "type": "holo",
+      "variantId": "generated"
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "category": "Pokemon",
+  "id": "swsh3.5-74",
+  "illustrator": "aky CG Works",
+  "image": "https://assets.tcgdex.net/en/swsh/swsh3.5/74",
+  "localId": "74",
+  "name": "Charizard VMAX",
+  "rarity": "Secret Rare",
+  "set": {
+    "cardCount": {
+      "official": 73,
+      "total": 80
+    },
+    "id": "swsh3.5",
+    "logo": "https://assets.tcgdex.net/en/swsh/swsh3.5/logo",
+    "name": "Champion's Path",
+    "symbol": "https://assets.tcgdex.net/univ/swsh/swsh3.5/symbol"
+  },
+  "variants": {
+    "firstEdition": false,
+    "holo": true,
+    "normal": false,
+    "reverse": false,
+    "wPromo": false
+  },
+  "variants_detailed": [
+    {
+      "type": "holo",
+      "size": "standard",
+      "variantId": "generated"
+    }
+  ],
+  "dexId": [
+    6
+  ],
+  "hp": 330,
+  "types": [
+    "Fire"
+  ],
+  "evolveFrom": "Charizard V",
+  "stage": "VMAX",
+  "attacks": [
+    {
+      "cost": [
+        "Colorless",
+        "Colorless",
+        "Colorless"
+      ],
+      "name": "Claw Slash",
+      "damage": 100
+    },
+    {
+      "cost": [
+        "Fire",
+        "Fire",
+        "Fire",
+        "Colorless",
+        "Colorless"
+      ],
+      "name": "G-Max Wildfire",
+      "effect": "Discard 2 Energy from this Pokémon.",
+      "damage": 300
+    }
+  ],
+  "weaknesses": [
+    {
+      "type": "Water",
+      "value": "×2"
+    }
+  ],
+  "retreat": 3,
+  "regulationMark": "D",
+  "legal": {
+    "standard": false,
+    "expanded": true
+  },
+  "updated": "2026-08-15T23:35:17+01:00",
+  "thirdParty": {
+    "cardmarket": 500225,
+    "tcgplayer": 223073
+  },
+  "pricing": {
+    "cardmarket": {
+      "updated": "2026-10-09T09:52:36.585Z",
+      "unit": "EUR",
+      "idProduct": 500225,
+      "avg": 165.28,
+      "low": 90,
+      "trend": 170.24,
+      "avg1": 160,
+      "avg7": 175,
+      "avg30": 182.51,
+      "avg-holo": null,
+      "low-holo": null,
+      "trend-holo": 271.61,
+      "avg1-holo": 245,
+      "avg7-holo": 273.18,
+      "avg30-holo": 293.48
+    },
+    "tcgplayer": {
+      "unit": "USD",
+      "updated": "2026-10-09T09:52:53.580Z",
+      "holofoil": {
+        "productId": 223073,
+        "lowPrice": 179,
+        "midPrice": 216.34,
+        "highPrice": 499.99,
+        "marketPrice": 202.81,
+        "directLowPrice": 209.99
+      }
+    }
+  }
+}

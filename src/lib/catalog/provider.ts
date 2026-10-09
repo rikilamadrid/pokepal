@@ -1,0 +1,29 @@
+import type { CardPrinting, CatalogLanguage } from "@/types/catalog";
+
+/**
+ * The one seam between PokéPal and a card catalog. Every result is a
+ * Zod-validated `CardPrinting` with provider extras (pricing, …) dropped.
+ */
+export interface CatalogProvider {
+  /**
+   * One printing by language-qualified id (`"tcgdex:es:swsh3-20"`) or bare
+   * provider card id (`"swsh3-20"`); null if unknown. A qualified id in another
+   * language than `lang`, or a malformed qualified id, throws `RangeError`.
+   */
+  getPrinting(id: string, lang: CatalogLanguage): Promise<CardPrinting | null>;
+  /** Printings whose printed number is `collectorNumber` in a set of `setOfficialCount` cards. */
+  findByNumber(
+    collectorNumber: string,
+    setOfficialCount: number,
+    lang: CatalogLanguage,
+  ): Promise<CardPrinting[]>;
+  /** Printings whose name contains `name` (case-insensitive), capped. */
+  searchByName(name: string, lang: CatalogLanguage): Promise<CardPrinting[]>;
+}
+
+/**
+ * Transport: GET a provider path (e.g. `"/en/cards/swsh3-20"`) and return the
+ * parsed JSON, or `null` when the resource does not exist (HTTP 404).
+ * Injected so tests run offline against recorded responses.
+ */
+export type CatalogFetch = (path: string) => Promise<unknown>;

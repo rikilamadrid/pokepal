@@ -1,0 +1,109 @@
+{
+  "category": "Energy",
+  "energyType": "Normal",
+  "hp": 0,
+  "id": "hgss1-116",
+  "image": "https://assets.tcgdex.net/en/hgss/hgss1/116",
+  "legal": {
+    "expanded": true,
+    "standard": true
+  },
+  "localId": "116",
+  "name": "Fire Energy",
+  "pricing": {
+    "cardmarket": {
+      "avg": 13.55,
+      "avg-holo": null,
+      "avg1": 12,
+      "avg1-holo": 14.99,
+      "avg30": 12.58,
+      "avg30-holo": 8.75,
+      "avg7": 10.91,
+      "avg7-holo": 8.75,
+      "idProduct": 279088,
+      "low": 3,
+      "low-holo": null,
+      "trend": 11.63,
+      "trend-holo": 14.52,
+      "unit": "EUR",
+      "updated": "2026-10-09T09:52:36.564Z"
+    },
+    "tcgplayer": {
+      "normal": {
+        "directLowPrice": null,
+        "highPrice": 194.82,
+        "lowPrice": 20,
+        "marketPrice": 25.66,
+        "midPrice": 26,
+        "productId": 85464
+      },
+      "unit": "USD",
+      "updated": "2026-10-09T09:52:44.461Z"
+    }
+  },
+  "rarity": "Common",
+  "retreat": 0,
+  "set": {
+    "cardCount": {
+      "official": 123,
+      "total": 124
+    },
+    "id": "hgss1",
+    "logo": "https://assets.tcgdex.net/en/hgss/hgss1/logo",
+    "name": "HeartGold SoulSilver",
+    "symbol": "https://assets.tcgdex.net/univ/hgss/hgss1/symbol"
+  },
+  "types": [
+    "Fire"
+  ],
+  "updated": "2026-07-28T21:08:27+01:00",
+  "variants": {
+    "firstEdition": false,
+    "holo": false,
+    "normal": true,
+    "reverse": false,
+    "wPromo": false
+  },
+  "variants_detailed": [
+    {
+      "pricing": {
+        "cardmarket": {
+          "avg": 13.55,
+          "avg-holo": null,
+          "avg1": 12,
+          "avg1-holo": 14.99,
+          "avg30": 12.58,
+          "avg30-holo": 8.75,
+          "avg7": 10.91,
+          "avg7-holo": 8.75,
+          "idProduct": 279088,
+          "low": 3,
+          "low-holo": null,
+          "trend": 11.63,
+          "trend-holo": 14.52,
+          "unit": "EUR",
+          "updated": "2026-10-09T09:52:36.564Z"
+        },
+        "tcgplayer": {
+          "normal": {
+            "directLowPrice": null,
+            "highPrice": 194.82,
+            "lowPrice": 20,
+            "marketPrice": 25.66,
+            "midPrice": 26,
+            "productId": 85464
+          },
+          "unit": "USD",
+          "updated": "2026-10-09T09:52:44.461Z"
+        }
+      },
+      "size": "standard",
+      "thirdParty": {
+        "cardmarket": 279088,
+        "tcgplayer": 85464
+      },
+      "type": "normal",
+      "variantId": "endfynwn4n10gzq"
+    }
+  ]
+}

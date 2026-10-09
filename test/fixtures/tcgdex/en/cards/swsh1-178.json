@@ -1,0 +1,50 @@
+{
+  "category": "Trainer",
+  "id": "swsh1-178",
+  "illustrator": "Yusuke Ohmura",
+  "image": "https://assets.tcgdex.net/en/swsh/swsh1/178",
+  "localId": "178",
+  "name": "Professor's Research (Professor Magnolia)",
+  "rarity": "Holo Rare",
+  "set": {
+    "cardCount": {
+      "official": 202,
+      "total": 216
+    },
+    "id": "swsh1",
+    "logo": "https://assets.tcgdex.net/en/swsh/swsh1/logo",
+    "name": "Sword & Shield",
+    "symbol": "https://assets.tcgdex.net/univ/swsh/swsh1/symbol"
+  },
+  "variants": {
+    "firstEdition": false,
+    "holo": true,
+    "normal": false,
+    "reverse": true,
+    "wPromo": false
+  },
+  "variants_detailed": [
+    {
+      "type": "reverse",
+      "size": "standard",
+      "variantId": "generated"
+    },
+    {
+      "type": "holo",
+      "size": "standard",
+      "variantId": "generated"
+    }
+  ],
+  "effect": "Discard your hand and draw 7 cards.",
+  "trainerType": "Supporter",
+  "regulationMark": "D",
+  "legal": {
+    "standard": false,
+    "expanded": true
+  },
+  "updated": "2026-08-16T22:12:40+01:00",
+  "pricing": {
+    "cardmarket": null,
+    "tcgplayer": null
+  }
+}
