@@ -14,7 +14,8 @@ export type CardCategory = "pokemon" | "trainer" | "energy";
 /** Physical finish of a copy. A property of the owned copy, not the printing. */
 export type CardFinish = "normal" | "holo" | "reverse" | "firstEdition";
 
-export type CatalogLanguage = "en" | "fr" | "es" | "it" | "pt" | "de" | "ja";
+/** Card languages supported in 2.0 (decision D10). */
+export type CatalogLanguage = "en" | "es" | "ja";
 
 export interface PokemonSpecies {
   dexNo: number;            // National Pokédex number, e.g. 6
@@ -38,7 +39,7 @@ export interface CardSetRef {
 
 /** One exact printed card, as verified against the catalog. Immutable snapshot. */
 export interface CardPrinting {
-  id: string;               // "{provider}:{providerCardId}", e.g. "tcgdex:swsh3-20"
+  id: string;               // "{provider}:{language}:{providerCardId}", e.g. "tcgdex:es:swsh3-20"
   provider: "tcgdex";       // widened only by an approved provider decision
   providerCardId: string;   // "swsh3-20"
   language: CatalogLanguage;

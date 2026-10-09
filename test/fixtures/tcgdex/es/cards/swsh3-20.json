@@ -1,0 +1,144 @@
+{
+  "attacks": [
+    {
+      "cost": [
+        "Incolora",
+        "Incolora",
+        "Incolora"
+      ],
+      "damage": 100,
+      "name": "Cuchillada Garra"
+    },
+    {
+      "cost": [
+        "Fuego",
+        "Fuego",
+        "Fuego",
+        "Incolora",
+        "Incolora"
+      ],
+      "damage": 300,
+      "effect": "Descarta 2 Energías de este Pokémon.",
+      "name": "Gigallamarada"
+    }
+  ],
+  "category": "Pokémon",
+  "dexId": [
+    6
+  ],
+  "evolveFrom": "Charizard V",
+  "hp": 330,
+  "id": "swsh3-20",
+  "illustrator": "aky CG Works",
+  "image": "https://assets.tcgdex.net/es/swsh/swsh3/20",
+  "legal": {
+    "expanded": true,
+    "standard": false
+  },
+  "localId": "20",
+  "name": "Charizard VMAX",
+  "pricing": {
+    "cardmarket": {
+      "avg": 52.46,
+      "avg-holo": null,
+      "avg1": 40,
+      "avg1-holo": 84.99,
+      "avg30": 47.44,
+      "avg30-holo": 83.91,
+      "avg7": 51.71,
+      "avg7-holo": 85.31,
+      "idProduct": 482974,
+      "low": 14.99,
+      "low-holo": null,
+      "trend": 61.21,
+      "trend-holo": 82.76,
+      "unit": "EUR",
+      "updated": "2026-10-09T09:52:36.566Z"
+    },
+    "tcgplayer": {
+      "holofoil": {
+        "directLowPrice": 40,
+        "highPrice": 136.47,
+        "lowPrice": 35,
+        "marketPrice": 41.17,
+        "midPrice": 45.12,
+        "productId": 219233
+      },
+      "unit": "USD",
+      "updated": "2026-10-09T09:52:53.442Z"
+    }
+  },
+  "rarity": "Holo Rara VMAX",
+  "regulationMark": "D",
+  "retreat": 3,
+  "set": {
+    "cardCount": {
+      "official": 189,
+      "total": 201
+    },
+    "id": "swsh3",
+    "logo": "https://assets.tcgdex.net/es/swsh/swsh3/logo",
+    "name": "Oscuridad Incandescente",
+    "symbol": "https://assets.tcgdex.net/univ/swsh/swsh3/symbol"
+  },
+  "stage": "VMAX",
+  "types": [
+    "Fuego"
+  ],
+  "updated": "2026-07-01T21:27:44+01:00",
+  "variants": {
+    "firstEdition": false,
+    "holo": true,
+    "normal": false,
+    "reverse": false,
+    "wPromo": false
+  },
+  "variants_detailed": [
+    {
+      "pricing": {
+        "cardmarket": {
+          "avg": 52.46,
+          "avg-holo": null,
+          "avg1": 40,
+          "avg1-holo": 84.99,
+          "avg30": 47.44,
+          "avg30-holo": 83.91,
+          "avg7": 51.71,
+          "avg7-holo": 85.31,
+          "idProduct": 482974,
+          "low": 14.99,
+          "low-holo": null,
+          "trend": 61.21,
+          "trend-holo": 82.76,
+          "unit": "EUR",
+          "updated": "2026-10-09T09:52:36.566Z"
+        },
+        "tcgplayer": {
+          "holofoil": {
+            "directLowPrice": 40,
+            "highPrice": 136.47,
+            "lowPrice": 35,
+            "marketPrice": 41.17,
+            "midPrice": 45.12,
+            "productId": 219233
+          },
+          "unit": "USD",
+          "updated": "2026-10-09T09:52:53.442Z"
+        }
+      },
+      "size": "estándar",
+      "thirdParty": {
+        "cardmarket": 482974,
+        "tcgplayer": 219233
+      },
+      "type": "holo",
+      "variantId": "jr7oetx1mqug9"
+    }
+  ],
+  "weaknesses": [
+    {
+      "type": "Agua",
+      "value": "×2"
+    }
+  ]
+}

@@ -5,7 +5,11 @@ import type { CardPrinting, CatalogLanguage } from "@/types/catalog";
  * Zod-validated `CardPrinting` with provider extras (pricing, …) dropped.
  */
 export interface CatalogProvider {
-  /** One printing by id (`"tcgdex:swsh3-20"` or `"swsh3-20"`); null if unknown. */
+  /**
+   * One printing by language-qualified id (`"tcgdex:es:swsh3-20"`) or bare
+   * provider card id (`"swsh3-20"`); null if unknown. A qualified id in another
+   * language than `lang`, or a malformed qualified id, throws `RangeError`.
+   */
   getPrinting(id: string, lang: CatalogLanguage): Promise<CardPrinting | null>;
   /** Printings whose printed number is `collectorNumber` in a set of `setOfficialCount` cards. */
   findByNumber(

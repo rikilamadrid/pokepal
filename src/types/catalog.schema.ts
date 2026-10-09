@@ -43,11 +43,7 @@ export const CARD_FINISHES = [
 
 export const CATALOG_LANGUAGES = [
   "en",
-  "fr",
   "es",
-  "it",
-  "pt",
-  "de",
   "ja",
 ] as const satisfies readonly CatalogLanguage[];
 
@@ -93,23 +89,28 @@ export const cardSetRefSchema: z.ZodType<CardSetRef> = z.strictObject({
  * Strict: a printing carries exactly the contract's keys, so provider extras
  * (pricing, attacks, legality, …) can never leak past the adapter boundary.
  */
-export const cardPrintingSchema: z.ZodType<CardPrinting> = z.strictObject({
-  id: z.string().regex(/^tcgdex:.+/),
-  provider: z.literal("tcgdex"),
-  providerCardId: z.string().min(1),
-  language: catalogLanguageSchema,
-  name: z.string().min(1),
-  category: cardCategorySchema,
-  collectorNumber: z.string().min(1),
-  set: cardSetRefSchema,
-  rarity: z.string().nullable(),
-  energyTypes: z.array(energyTypeSchema),
-  stage: z.string().nullable(),
-  hp: z.number().int().positive().nullable(),
-  dexNos: z.array(z.number().int().positive()),
-  illustrator: z.string().nullable(),
-  regulationMark: z.string().nullable(),
-  availableFinishes: z.array(cardFinishSchema),
-  imageUrl: z.url().nullable(),
-  fetchedAt: isoDateTime,
-});
+export const cardPrintingSchema: z.ZodType<CardPrinting> = z
+  .strictObject({
+    id: z.string().min(1),
+    provider: z.literal("tcgdex"),
+    providerCardId: z.string().min(1),
+    language: catalogLanguageSchema,
+    name: z.string().min(1),
+    category: cardCategorySchema,
+    collectorNumber: z.string().min(1),
+    set: cardSetRefSchema,
+    rarity: z.string().nullable(),
+    energyTypes: z.array(energyTypeSchema),
+    stage: z.string().nullable(),
+    hp: z.number().int().positive().nullable(),
+    dexNos: z.array(z.number().int().positive()),
+    illustrator: z.string().nullable(),
+    regulationMark: z.string().nullable(),
+    availableFinishes: z.array(cardFinishSchema),
+    imageUrl: z.url().nullable(),
+    fetchedAt: isoDateTime,
+  })
+  .refine((p) => p.id === `${p.provider}:${p.language}:${p.providerCardId}`, {
+    message: "id must be {provider}:{language}:{providerCardId}",
+    path: ["id"],
+  });

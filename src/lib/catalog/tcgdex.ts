@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { cardPrintingSchema } from "@/types/catalog.schema";
+import { CATALOG_LANGUAGES, cardPrintingSchema } from "@/types/catalog.schema";
 import type {
   CardCategory,
   CardFinish,
@@ -66,7 +66,12 @@ export type RawTcgdexCard = z.infer<typeof rawCardSchema>;
 
 // ---- Mapping -----------------------------------------------------------------
 
-const ENERGY_BY_TCGDEX_TYPE: Readonly<Record<string, EnergyType>> = {
+// TCGdex localizes category and energy-type names per language. Names were
+// recorded from /v2/{lang}/categories and /v2/{lang}/types on 2026-10-09
+// (fixtures in test/fixtures/tcgdex/{lang}/); ja uses the English names.
+// Keys are lower-cased; an unmapped name is a CatalogError, never dropped.
+
+const ENGLISH_ENERGY_TYPES: Readonly<Record<string, EnergyType>> = {
   grass: "grass",
   fire: "fire",
   water: "water",
@@ -80,17 +85,59 @@ const ENERGY_BY_TCGDEX_TYPE: Readonly<Record<string, EnergyType>> = {
   colorless: "colorless",
 };
 
-const CATEGORY_BY_TCGDEX: Readonly<Record<string, CardCategory>> = {
+const ENGLISH_CATEGORIES: Readonly<Record<string, CardCategory>> = {
   pokemon: "pokemon",
   trainer: "trainer",
   energy: "energy",
 };
 
-/** TCGdex type names → contract energy types; unknown names are dropped. */
-export function mapEnergyTypes(types: readonly string[] | undefined): EnergyType[] {
-  const mapped = (types ?? [])
-    .map((t) => ENERGY_BY_TCGDEX_TYPE[t.trim().toLowerCase()])
-    .filter((t): t is EnergyType => t !== undefined);
+const ENERGY_BY_TCGDEX_TYPE: Readonly<Record<CatalogLanguage, Readonly<Record<string, EnergyType>>>> = {
+  en: ENGLISH_ENERGY_TYPES,
+  ja: ENGLISH_ENERGY_TYPES,
+  es: {
+    planta: "grass",
+    fuego: "fire",
+    agua: "water",
+    rayo: "lightning",
+    "psíquico": "psychic",
+    lucha: "fighting",
+    oscura: "darkness",
+    "metálica": "metal",
+    hada: "fairy",
+    "dragón": "dragon",
+    incolora: "colorless",
+  },
+};
+
+const CATEGORY_BY_TCGDEX: Readonly<Record<CatalogLanguage, Readonly<Record<string, CardCategory>>>> = {
+  en: ENGLISH_CATEGORIES,
+  ja: ENGLISH_CATEGORIES,
+  es: {
+    "pokémon": "pokemon",
+    entrenador: "trainer",
+    "energía": "energy",
+  },
+};
+
+const lookupKey = (name: string) => name.normalize("NFC").trim().toLowerCase();
+
+/** A TCGdex category name in `lang` → contract category; throws if unmapped. */
+export function mapCategory(category: string, lang: CatalogLanguage): CardCategory {
+  const mapped = CATEGORY_BY_TCGDEX[lang][lookupKey(category)];
+  if (!mapped) throw new CatalogError(`Unknown TCGdex category "${category}" for language ${lang}`);
+  return mapped;
+}
+
+/** TCGdex type names in `lang` → contract energy types; throws on an unmapped name. */
+export function mapEnergyTypes(
+  types: readonly string[] | undefined,
+  lang: CatalogLanguage,
+): EnergyType[] {
+  const mapped = (types ?? []).map((t) => {
+    const energy = ENERGY_BY_TCGDEX_TYPE[lang][lookupKey(t)];
+    if (!energy) throw new CatalogError(`Unknown TCGdex energy type "${t}" for language ${lang}`);
+    return energy;
+  });
   return [...new Set(mapped)];
 }
 
@@ -125,12 +172,16 @@ export function mapTcgdexCard(
     throw new CatalogError(`Unexpected TCGdex card shape: ${parsed.error.message}`);
   }
   const card = parsed.data;
-  const category = CATEGORY_BY_TCGDEX[card.category.trim().toLowerCase()];
-  if (!category) {
-    throw new CatalogError(`Unknown TCGdex category "${card.category}" on ${card.id}`);
+  let category: CardCategory;
+  let energyTypes: EnergyType[];
+  try {
+    category = mapCategory(card.category, lang);
+    energyTypes = mapEnergyTypes(card.types, lang);
+  } catch (err) {
+    throw err instanceof CatalogError ? new CatalogError(`${err.message} on ${card.id}`) : err;
   }
   const printing = cardPrintingSchema.safeParse({
-    id: `${ID_PREFIX}${card.id}`,
+    id: formatPrintingId(lang, card.id),
     provider: "tcgdex",
     providerCardId: card.id,
     language: lang,
@@ -147,7 +198,7 @@ export function mapTcgdexCard(
       logoUrl: card.set.logo ?? null,
     },
     rarity: mapRarity(card.rarity),
-    energyTypes: mapEnergyTypes(card.types),
+    energyTypes,
     stage: card.stage ?? null,
     hp: card.hp ?? null,
     dexNos: card.dexId ?? [],
@@ -176,7 +227,11 @@ export function createTcgdexFetch(baseUrl: string = TCGDEX_BASE_URL): CatalogFet
     }
     if (res.status === 404) return null;
     if (!res.ok) throw new CatalogError(`Catalog request failed (HTTP ${res.status})`);
-    return res.json();
+    try {
+      return await res.json();
+    } catch {
+      throw new CatalogError("Catalog returned an unreadable response");
+    }
   };
 }
 
@@ -188,7 +243,29 @@ export function collectorNumberVariants(collectorNumber: string): string[] {
   return [...new Set([trimmed, bare, bare.padStart(3, "0")])];
 }
 
-const stripPrefix = (id: string) => (id.startsWith(ID_PREFIX) ? id.slice(ID_PREFIX.length) : id);
+/** `CardPrinting.id` for a TCGdex card: `"tcgdex:{language}:{providerCardId}"`. */
+export function formatPrintingId(lang: CatalogLanguage, providerCardId: string): string {
+  return `${ID_PREFIX}${lang}:${providerCardId}`;
+}
+
+/**
+ * The TCGdex card id behind a printing id (`"tcgdex:es:swsh3-20"`) or a bare
+ * provider card id (`"swsh3-20"`). A qualified id must name `lang`; any other
+ * `tcgdex:`-prefixed form is rejected.
+ */
+export function providerCardIdFor(id: string, lang: CatalogLanguage): string {
+  const trimmed = id.trim();
+  if (!trimmed.startsWith(ID_PREFIX)) return trimmed;
+  const [idLang, ...rest] = trimmed.slice(ID_PREFIX.length).split(":");
+  const cardId = rest.join(":");
+  if (!(CATALOG_LANGUAGES as readonly string[]).includes(idLang) || !cardId) {
+    throw new RangeError(`Malformed printing id "${id}"`);
+  }
+  if (idLang !== lang) {
+    throw new RangeError(`Printing id "${id}" is not in the requested language ${lang}`);
+  }
+  return cardId;
+}
 const seg = encodeURIComponent;
 
 export interface TcgdexProviderOptions {
@@ -208,7 +285,7 @@ export function createTcgdexProvider(options: TcgdexProviderOptions = {}): Catal
   }
 
   async function getPrinting(id: string, lang: CatalogLanguage) {
-    const cardId = stripPrefix(id).trim();
+    const cardId = providerCardIdFor(id, lang);
     if (!cardId) return null;
     return fetchCard(`/${lang}/cards/${seg(cardId)}`, lang);
   }

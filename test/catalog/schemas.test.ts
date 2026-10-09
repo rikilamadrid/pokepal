@@ -51,6 +51,13 @@ describe("contract schemas", () => {
     expect(cardPrintingSchema.safeParse({ ...printing, pricing: {} }).success).toBe(false);
   });
 
+  it("CardPrinting id must be {provider}:{language}:{providerCardId}", () => {
+    expect(printing.id).toBe("tcgdex:en:swsh3-20");
+    expect(cardPrintingSchema.safeParse({ ...printing, id: "tcgdex:swsh3-20" }).success).toBe(false);
+    expect(cardPrintingSchema.safeParse({ ...printing, id: "tcgdex:es:swsh3-20" }).success).toBe(false);
+    expect(cardPrintingSchema.safeParse({ ...printing, language: "fr" }).success).toBe(false);
+  });
+
   it("OwnedCard requires a UUID id and ISO timestamps", () => {
     expect(ownedCardSchema.safeParse(owned).success).toBe(true);
     expect(ownedCardSchema.safeParse({ ...owned, id: "card-1728475200000" }).success).toBe(false);
