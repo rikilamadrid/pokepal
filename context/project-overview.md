@@ -436,3 +436,53 @@ Step 1 — Viewfinder     Step 2 — Confirm       Step 3 — Tag
   `viewport-fit=cover` ensures non-zero insets on notched devices.
 - **Static export** — `output: 'export'`; no API routes / Server Actions in the
   shipped bundle. All backend access is via the Supabase client SDK under RLS.
+
+---
+
+## PokéPal 2.0 Direction (2026-10-09)
+
+PokéPal 2.0 turns the app into an AI-assisted **digital Pokémon TCG
+collection** for a 6-year-old: photos are temporary scanning inputs, the
+collection holds verified catalog printings and owned copies, and **Trade
+Check** answers "Do I have this card?". The 1.x `Card` model above remains the
+legacy format until Feature 24 migrates it. Target architecture and shared
+contracts: `context/pokepal-2/02-target-architecture.md`. Audit:
+`context/pokepal-2/01-current-state.md`.
+
+Out of scope for 2.0: pricing, market valuation, subscriptions, social
+features. Phases 14, 15, 17 are superseded by Features 18–22.
+
+## Commands
+
+```text
+install: npm ci
+run/dev: npm run dev   (phone: npm run dev:mobile)
+test: npm test          (added by ticket 18.1)
+lint/static analysis: npm run lint
+build/package: npm run build   (native: npm run native:sync)
+```
+
+## Delivery Workflow
+
+| Area | Choice |
+| --- | --- |
+| Execution mode | Pathfinder **orchestrator** (`context/execution-mode.md`) |
+| Ticket store | Local Markdown, `context/tickets/` |
+| Git workflow | One branch per ticket (`ticket/<key>-<slug>` from the orchestrator; `feature/…` / `fix/…` by hand) |
+| Default branch | `main` |
+| Commit convention | Conventional commits; no "Generated with Claude" |
+| Review policy | Adversary + independent Tester per ticket; human accepts |
+| Merge strategy | `--no-ff` merge into `main`, human-approved per ticket |
+| CI/CD | GitHub Actions (lint, build, test); Vercel deploys `main` (production) and PR previews |
+| Versioning and changelog | None |
+| Release process | Push to `main` = web production deploy (ask first); native via Xcode/TestFlight (`NATIVE.md`) |
+
+## Durable Decisions
+
+| Date | Decision | Reason |
+| --- | --- | --- |
+| 2026-06-30 | Supabase backend; Capacitor static bundle (`output: 'export'`) | One codebase for PWA + iOS/Android |
+| 2026-10-09 | Photos are never collection assets in 2.0 | Accuracy, privacy, storage |
+| 2026-10-09 | Recognition runs server-side (Supabase Edge Function); keys never in the client | Static export + key safety |
+| 2026-10-09 | Claude vision for the recognition prototype; €5 evaluation budget; no paid call before key + spend limit confirmed | Cost control |
+| 2026-10-09 | Pathfinder orchestrator mode adopted | Parallel, reviewable delivery |

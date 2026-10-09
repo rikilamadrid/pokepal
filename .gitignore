@@ -40,3 +40,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# pathfinder — transient workspace state + orchestrator worktrees
+context/current-ticket.md
+context/handoff.md
+/.pathfinder/

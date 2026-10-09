@@ -1,5 +1,7 @@
 # PokéPal — Phase 14 Spec: Scan Capture Quality
 
+> **Superseded (2026-10-09)** by PokéPal 2.0 — Features 18–22 (see `context/pokepal-2/02-target-architecture.md`).
+
 ## Overview
 
 Enhancement phase (post-launch). On-device testing showed the Scan viewfinder's

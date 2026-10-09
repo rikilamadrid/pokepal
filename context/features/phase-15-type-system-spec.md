@@ -1,5 +1,7 @@
 # PokéPal — Phase 15 Spec: Expanded Type System (+ optional card stage)
 
+> **Superseded (2026-10-09)** by PokéPal 2.0 — Features 18–22 (see `context/pokepal-2/02-target-architecture.md`).
+
 ## Overview
 
 Enhancement phase (post-launch). The app ships with only 6 creature types; real
