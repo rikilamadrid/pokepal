@@ -1,5 +1,7 @@
 # PokéPal — Phase 17 Spec: AI Card Auto-Recognition (Premium)
 
+> **Superseded (2026-10-09)** by PokéPal 2.0 — Features 18–22 (see `context/pokepal-2/02-target-architecture.md`).
+
 ## Overview
 
 Enhancement phase (post-launch), **premium / subscription-gated**. After capturing

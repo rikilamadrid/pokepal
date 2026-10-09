@@ -15,6 +15,12 @@ const eslintConfig = defineConfig([
     // Capacitor native shell (not web app source; contains built web assets).
     "ios/**",
     "android/**",
+    // Pathfinder workflow kit (vendored tooling, not app source).
+    "skills/**",
+    "lib/**",
+    "templates/**",
+    ".claude/**",
+    ".pathfinder/**",
     // Node build-time utilities (icon/asset generators use CommonJS require()).
     "scripts/**",
   ]),

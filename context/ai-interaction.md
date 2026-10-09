@@ -1,59 +1,187 @@
 # AI Interaction Guidelines
 
+PokéPal project rules come first and override the Pathfinder defaults below
+where they are more specific.
+
+## PokéPal Project Rules
+
+### Communication
+
+- Be concise and direct; explain non-obvious decisions briefly.
+- Ask before large refactors or architectural changes.
+- Don't add features not in the approved Feature specs; no "nice to have" extras.
+- Never delete files without clarification.
+- Make minimal changes; preserve existing patterns; don't refactor unrelated code.
+
+### Git
+
+- One branch per ticket. Orchestrated workers use the engine's
+  `ticket/<key>-<slug>` branches; hand-run work uses `feature/<name>` or
+  `fix/<name>`.
+- Conventional commit messages (`feat:`, `fix:`, `chore:`, `docs:`, `test:`).
+- One feature/fix per commit. Never put "Generated with Claude" in commit messages.
+- Ask before committing; never commit until `npm run lint` and `npm run build` pass.
+- Ask to delete a branch once it is merged.
+- Pushing `main` deploys production on Vercel — treat a push to `main` as a
+  deployment and ask first.
+
+### PokéPal 2.0 approvals (decided 2026-10-09)
+
+Ask before, in addition to the defaults below:
+
+- any paid model/API call. The recognition evaluation budget is **€5 total**;
+  no paid call until a valid API key **and** a confirmed spend-limit mechanism
+  exist. Use a cost-efficient vision model first.
+- deploying a Supabase Edge Function, or changing Supabase secrets, schema,
+  RLS, or Storage on the live project.
+- mutating production data, or running a migration against the live database.
+- deleting or rewriting any previously saved card photo (local or Supabase
+  Storage). Legacy photos are deleted only after their cards are resolved and
+  the human approves the migration.
+- introducing any recurring paid service (e.g. a paid catalog provider).
+
+Experiments stay isolated from production (local env, fixtures, or a separate
+Supabase project). Prefer reversible, non-destructive options that keep the
+existing app working.
+
+---
+
+# Pathfinder Defaults
+
 ## Communication
 
-- Be concise and direct
-- Explain non-obvious decisions briefly
-- Ask before large refactors or architectural changes
-- Don't add features not in the project spec
-- Never delete files without clarification
+- Be concise, direct, and honest.
+- Separate facts, assumptions, recommendations, and unresolved decisions.
+- Do not invent answers for `TBD` items.
+- After 2–3 grounded failed approaches, stop and explain the blocker.
 
-## Workflow
+## Human Approval
 
-This is the common workflow that we will use for every single feature/fix:
+Ask before:
 
-1. **Document** - Document the feature in @context/current-feature.md.
-2. **Branch** - Create new branch for feature, fix, etc
-3. **Implement** - Implement the feature/fix that I create in @context/current-feature.md
-4. **Test** - Verify it works in the browser. Implement unit testing later. Run `npm run build` and fix any errors
-5. **Iterate** - Iterate and change things if needed
-6. **Commit** - Only after build passes and everything works
-7. **Merge** - Merge to main
-8. **Delete Branch** - Delete branch after merge
-9. **Review** - Review AI-generated code periodically and on demand.
-10. Mark as completed in @context/current-feature.md and add to history
+- architecture or dependency changes
+- database, auth, payment, secrets, or security-sensitive changes
+- destructive commands or file deletion
+- Git history rewriting
+- commits, merges, releases, or deployments
+- adopting prototype code into production
+- writes outside the repository, such as tickets in a shared store
+- adopting any change to Pathfinder's skills, roles, context, or templates that
+  a harvest proposed
 
-Do NOT commit without permission and until the build passes. If build fails, fix the issues first.
+The human owns judgment, acceptance, merge, and release decisions.
 
-## Branching
+## Git and Delivery
 
-We will create a new branch for every feature/fix. Name branch **feature/[feature]** or **fix[fix]**, etc. Ask to delete the branch once merged.
+Follow `context/project-overview.md`.
 
-## Commits
+Do not assume branch strategy, commit style, pull requests, versioning,
+or deployment workflow.
 
-- Ask before committing (don't auto-commit)
-- Use conventional commit messages (feat:, fix:, chore:, etc.)
-- Keep commits focused (one feature/fix per commit)
-- Never put "Generated With Claude" in the commit messages
+Inspect current Git state before acting. If the workflow is unclear or
+`TBD`, ask.
 
-## When Stuck
+## Delivery Workflow
 
-- If something isn't working after 2-3 attempts, stop and explain the issue
-- Don't keep trying random fixes
-- Ask for clarification if requirements are unclear
+Use the workflow skills instead of recreating their procedures in chat:
 
-## Code Changes
+1. `to-tickets` — slice one approved Feature into executable tickets.
+2. `/ticket load` — load one ticket, its Feature, and relevant context.
+3. `/ticket start` — implement that ticket.
+   Optional before review: `/ticket adversary` challenges the implementation
+   through reproducible experiments; Tester independently verifies them.
+4. `/ticket review` — verify the work and report findings.
+5. `/ticket complete` — complete accepted work and durable records, and name
+   the tickets that are now ready.
+6. `learn-feature` — optionally teach what was implemented.
+7. `reflect` — record friction as it appears, harvest periodically, and let the
+   human decide what becomes a Feature.
 
-- Make minimal changes to accomplish the task
-- Don't refactor unrelated code unless asked
-- Don't add "nice to have" features
-- Preserve existing patterns in the codebase
+In human-in-the-loop mode, the human coordinates this loop. In orchestrator
+mode, `orchestrate` coordinates the same ticket actions across dependency-safe
+workers in separate worktrees. Successful implementation checkpoints Adversary
+pending; a separate bounded Adversary session precedes independent Tester.
+Suspected defects reach Tester first. Full confirmed findings and experiments
+cross sessions through the transient current-ticket checkpoint at the exact PR
+head. Repairs rerun Adversary then Tester; unchanged integration-only refresh
+requires fresh Tester/CI. Only current-head reviewed work reaches done and the
+integrator. One
+worker’s human gate does not stop unrelated workers. The execution-mode rule
+lives in `skills/ticket/SKILL.md`; neither mode changes human authority.
 
-## Code Review
+Lifecycle skills assume their responsible role automatically. Explicit
+activation with `/role` is optional and overrides that default for the session.
 
-Review AI-generated code periodically, especially for:
+### Status
 
-- Security (auth checks, input validation)
-- Performance (unnecessary re-renders, N+1 queries)
-- Logic errors (edge cases)
-- Patterns (matches existing codebase?)
+Ticket status records durable lifecycle state only:
+
+`Proposed` → `Ready` → `In Progress` → `Complete`
+
+`Cancelled` and `Superseded` are terminal alternatives.
+
+- `Ready` means the human approved execution.
+- Review and testing are workflow activity, not a status. Human-in-the-loop
+  coordination remains optional; orchestrated delivery requires its separate
+  Adversary and Tester phases. A ticket stays `In Progress` until it is complete.
+- `Blocked` is not a status. A ticket's blockers are the edges under its
+  `## Blocked by`, and anything else that stops work is recorded in current
+  workspace state.
+- A Feature's status is derived from its tickets, never maintained by hand.
+- The human decides approval, acceptance, cancellation, and supersession.
+
+## Context Discipline
+
+- Read only what the current work requires.
+- Prefer exact files or sections over broad repository scans.
+- Do not load history, roadmap, other tickets, or unrelated context by
+  default.
+- Work one active ticket per worker. Human-in-the-loop mode uses one ticket
+  session; orchestrator mode may coordinate several isolated workers.
+- If the work can no longer be understood safely in a focused session,
+  stop and split or hand off.
+- Extra scaffolding must earn its cost by reducing downstream context.
+
+## Scope Control
+
+Stay inside the approved work.
+
+Do not add unrelated refactors, features, dependency changes, visual
+redesigns, speculative abstractions, or later roadmap work.
+
+When necessary work falls outside scope, stop and ask.
+
+## Prototypes
+
+Use `debate-me` to decide whether a prototype is useful.
+
+Use `prototype` to test one important assumption at a time.
+
+Prototype output is evidence, not production code, until the human
+explicitly approves adoption.
+
+## Review
+
+Review against the Feature and the actual diff.
+
+Prioritize:
+
+1. correctness
+2. security and privacy
+3. regressions and edge cases
+4. accessibility when relevant
+5. performance
+6. maintainability
+
+Verification effort should be proportional to risk.
+
+Report findings; do not manufacture them.
+
+## Learning
+
+Explain what was actually implemented.
+
+Use examples, diagrams, or quizzes only when they improve understanding.
+
+Keep Feature learning scoped. Use `learn-codebase` for broad repository
+study.
