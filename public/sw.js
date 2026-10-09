@@ -9,7 +9,8 @@
  *     from cache, refreshed in the background.
  * Bump CACHE to invalidate old caches on deploy.
  */
-const CACHE = "pokepal-v1";
+const CACHE_PREFIX = "pokepal-";
+const CACHE = `${CACHE_PREFIX}v2`;
 const APP_SHELL = "/";
 
 self.addEventListener("install", (event) => {
@@ -26,7 +27,11 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
+        Promise.all(
+          keys
+            .filter((k) => k.startsWith(CACHE_PREFIX) && k !== CACHE)
+            .map((k) => caches.delete(k)),
+        ),
       )
       .then(() => self.clients.claim()),
   );

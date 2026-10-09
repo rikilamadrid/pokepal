@@ -433,3 +433,13 @@ changes); denial still falls back to upload / generated art.
   removed (local-first gating holds); lint clean. **Remaining (user, dashboards —
   not doable from this env):** import repo in Vercel, set the two env vars, add the
   Vercel domain to Supabase Auth URLs, then push to deploy.
+- **2026-07-02** — Fixed **Vercel black/blank app shell after first paint** on
+  `fix-vercel-black-page`. Root cause was the exported HTML rendering empty
+  screen bodies until localStorage hydration, plus storage trusting any array as
+  valid cards (old/malformed rows could crash the UI after hydration). The app now
+  renders a safe empty state pre-hydration, normalizes persisted cards/tombstones
+  at the storage boundary (repairing missing owner/img/date fields and filtering
+  invalid records), and bumps the service-worker cache to `pokepal-v2` while
+  deleting prior `pokepal-*` caches on activate. Verified deployed URL returns
+  `200`, deployed chunks return `200`, `npm run lint` passes, and `npm run build`
+  passes.
