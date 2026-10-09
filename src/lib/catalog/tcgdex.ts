@@ -53,7 +53,8 @@ const rawCardSchema = z.looseObject({
     })
     .optional(),
   dexId: z.array(z.number().int().positive()).optional(),
-  hp: z.number().int().positive().optional(),
+  // TCGdex writes hp 0 on Energy cards; the contract has no 0 HP, so it maps to null.
+  hp: z.number().int().nonnegative().optional(),
   types: z.array(z.string()).optional(),
   stage: z.string().optional(),
   regulationMark: z.string().optional(),
@@ -200,7 +201,7 @@ export function mapTcgdexCard(
     rarity: mapRarity(card.rarity),
     energyTypes,
     stage: card.stage ?? null,
-    hp: card.hp ?? null,
+    hp: card.hp && card.hp > 0 ? card.hp : null,
     dexNos: card.dexId ?? [],
     illustrator: card.illustrator ?? null,
     regulationMark: card.regulationMark ?? null,

@@ -106,6 +106,20 @@ describe("mapTcgdexCard", () => {
     expectNoPricing(printing);
   });
 
+  it("maps an Energy card whose TCGdex hp is 0 to hp null (hgss1-116)", () => {
+    const raw = loadFixture("/en/cards/hgss1-116") as { hp?: unknown };
+    expect(raw.hp).toBe(0); // the recorded response really carries hp 0
+    const printing = mapTcgdexCard(raw, "en", FETCHED_AT);
+    expect(printing).toMatchObject({
+      id: "tcgdex:en:hgss1-116",
+      name: "Fire Energy",
+      category: "energy",
+      hp: null,
+      energyTypes: ["fire"],
+    });
+    expectNoPricing(printing);
+  });
+
   it("maps a Japanese card with the requested language", () => {
     const printing = mapTcgdexCard(loadFixture("/ja/cards/SV2a-006"), "ja", FETCHED_AT);
     expect(printing).toMatchObject({
