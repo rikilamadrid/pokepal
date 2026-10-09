@@ -1,0 +1,25 @@
+[
+  {
+    "id": "swsh3-20",
+    "localId": "20",
+    "name": "Charizard VMAX",
+    "image": "https://assets.tcgdex.net/en/swsh/swsh3/20"
+  },
+  {
+    "id": "swsh3.5-74",
+    "localId": "74",
+    "name": "Charizard VMAX",
+    "image": "https://assets.tcgdex.net/en/swsh/swsh3.5/74"
+  },
+  {
+    "id": "swsh4.5sv-SV107",
+    "localId": "SV107",
+    "name": "Charizard VMAX"
+  },
+  {
+    "id": "swshp-SWSH261",
+    "localId": "SWSH261",
+    "name": "Charizard VMAX",
+    "image": "https://assets.tcgdex.net/en/swsh/swshp/SWSH261"
+  }
+]

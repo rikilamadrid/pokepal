@@ -1,0 +1,22 @@
+[
+  {
+    "id": "swsh3",
+    "name": "Darkness Ablaze",
+    "logo": "https://assets.tcgdex.net/en/swsh/swsh3/logo",
+    "symbol": "https://assets.tcgdex.net/univ/swsh/swsh3/symbol",
+    "cardCount": {
+      "total": 201,
+      "official": 189
+    }
+  },
+  {
+    "id": "swsh10",
+    "name": "Astral Radiance",
+    "logo": "https://assets.tcgdex.net/en/swsh/swsh10/logo",
+    "symbol": "https://assets.tcgdex.net/univ/swsh/swsh10/symbol",
+    "cardCount": {
+      "total": 216,
+      "official": 189
+    }
+  }
+]
