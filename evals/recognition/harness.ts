@@ -89,9 +89,11 @@ async function evaluatePhoto(options: HarnessOptions, photo: ManifestPhoto): Pro
   } catch (error) {
     if (!(error instanceof ModelCallError)) throw error;
     // A failed call is recorded with the usage it was billed for. When that is
-    // unknown and the provider may have done the work (timeout, network, 5xx),
-    // the worst case is recorded; a 4xx refusal is not billed.
-    const unknownBilling = error.usage === null && (error.status === null || error.status >= 500);
+    // unknown and the provider may have done the work (timeout, network, 5xx,
+    // or a 2xx whose body or usage could not be read), the worst case is
+    // recorded; only a 4xx refusal is not billed.
+    const refused = error.status !== null && error.status >= 400 && error.status < 500;
+    const unknownBilling = error.usage === null && !refused;
     const costEur =
       unknownBilling && !options.dryRun
         ? record(0, 0, usdToEur(worstCaseCostUsd()))

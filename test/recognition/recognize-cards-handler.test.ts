@@ -6,6 +6,7 @@ import { recognitionResponseSchema } from "@/lib/recognition/transport";
 import type { CatalogProvider } from "@/lib/catalog/provider";
 import type { ExtractedCardFields } from "@/types/scan";
 import {
+  MAX_BODY_BYTES,
   MAX_IMAGE_BYTES,
   createHandler,
   logEvent,
@@ -153,6 +154,42 @@ describe("recognize-cards handler", () => {
       expect(res.status).toBe(status);
       expect(res.body).toEqual({ error: code });
       expect(model.seen).toHaveLength(0);
+    });
+
+    it("stops reading a streamed upload without Content-Length once it passes the bound", async () => {
+      const chunk = new Uint8Array(256 * 1024);
+      let pulled = 0;
+      const body = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          pulled += chunk.byteLength;
+          controller.enqueue(chunk);
+        },
+      });
+      const req = new Request(URL_, {
+        method: "POST",
+        headers: { authorization: `Bearer ${TOKEN}`, "content-type": "multipart/form-data; boundary=x" },
+        body,
+        duplex: "half",
+      } as RequestInit & { duplex: "half" });
+      expect(req.headers.get("content-length")).toBeNull();
+      const model = modelReturning([]);
+      const res = await call(deps({ model }), req);
+      expect(res.status).toBe(413);
+      expect(res.body).toEqual({ error: "too-large" });
+      expect(model.seen).toHaveLength(0);
+      expect(pulled).toBeLessThanOrEqual(MAX_BODY_BYTES + 3 * chunk.byteLength);
+    });
+
+    it("parses a valid upload streamed without Content-Length", async () => {
+      const source = request();
+      const req = new Request(URL_, {
+        method: "POST",
+        headers: { authorization: `Bearer ${TOKEN}`, "content-type": source.headers.get("content-type") ?? "" },
+        body: source.body,
+        duplex: "half",
+      } as RequestInit & { duplex: "half" });
+      expect(req.headers.get("content-length")).toBeNull();
+      expect((await call(deps(), req)).status).toBe(200);
     });
 
     it("rejects a body that is not multipart", async () => {

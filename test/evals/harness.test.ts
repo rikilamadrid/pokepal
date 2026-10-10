@@ -14,7 +14,12 @@ import {
 import { loadManifest, type LoadedManifest } from "../../evals/recognition/manifest";
 import { computeMetrics, percentile, scorePhoto } from "../../evals/recognition/metrics";
 import { renderMarkdown, writeReport } from "../../evals/recognition/report";
-import { ModelCallError, worstCaseCostUsd, type VisionModel } from "../../supabase/functions/recognize-cards/model";
+import {
+  ModelCallError,
+  createAnthropicModel,
+  worstCaseCostUsd,
+  type VisionModel,
+} from "../../supabase/functions/recognize-cards/model";
 import { createMemoryCatalog, recordedPrinting } from "../helpers/memory-catalog";
 
 const DRY_RUN_MANIFEST = fileURLToPath(new URL("../../evals/recognition/fixtures/dry-run/manifest.json", import.meta.url));
@@ -136,6 +141,40 @@ describe("paid runs are budget-capped (fake paid model, no network)", () => {
       worstCaseCostUsd(),
       worstCaseCostUsd(),
     ]);
+  });
+
+  describe("a 200 whose usage cannot be read is billed at the worst case", () => {
+    const erroringBody = () =>
+      new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"stop_reason":"tool_use","content":['));
+          controller.error(new Error("connection reset"));
+        },
+      });
+    it.each([
+      ["a body that is not JSON", () => new Response('{"stop_reason":"tool_use","content":[', { status: 200 })],
+      ["a body stream that errors mid-read", () => new Response(erroringBody(), { status: 200 })],
+      [
+        "an envelope without a readable usage block",
+        () => Response.json({ stop_reason: "tool_use", content: [{ type: "tool_use", name: "x", input: {} }] }),
+      ],
+      [
+        "an envelope with usage but no stop_reason",
+        () => Response.json({ content: [], usage: { input_tokens: 10, output_tokens: 5 } }),
+      ],
+    ])("%s", async (_what, respond) => {
+      const file = ledgerFile();
+      const fakeFetch = vi.fn(async () => respond());
+      const model = createAnthropicModel({ apiKey: "fake-key", fetch: fakeFetch as unknown as typeof fetch });
+      const report = await runEvaluation(options({ dryRun: false, modelFor: () => model, ledger: createBudgetLedger(fileLedgerStore(file)) }));
+      expect(fakeFetch).toHaveBeenCalledTimes(3);
+      expect(report.photoErrors).toHaveLength(3);
+      expect(fileLedgerStore(file).read().entries.map((e) => e.costEur)).toEqual([
+        worstCaseCostUsd(),
+        worstCaseCostUsd(),
+        worstCaseCostUsd(),
+      ]);
+    });
   });
 
   it("records nothing for an unbilled 4xx refusal", async () => {

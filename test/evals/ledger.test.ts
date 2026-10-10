@@ -1,10 +1,12 @@
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   BUDGET_CAP_EUR,
   BudgetExceededError,
+  LedgerLockedError,
+  acquireLedgerLock,
   createBudgetLedger,
   emptyLedger,
   fileLedgerStore,
@@ -74,6 +76,28 @@ describe("budget ledger", () => {
     const reopened = createBudgetLedger(fileLedgerStore(file));
     expect(reopened.spentEur()).toBe(0.01);
     expect(JSON.parse(readFileSync(file, "utf8")).entries).toHaveLength(1);
+  });
+
+  it("lets only one live run hold the ledger at a time", () => {
+    const file = join(mkdtempSync(join(tmpdir(), "ledger-")), "budget-ledger.json");
+    writeFileSync(file, JSON.stringify(emptyLedger()));
+    const release = acquireLedgerLock(file);
+    expect(existsSync(`${file}.lock`)).toBe(true);
+    expect(() => acquireLedgerLock(file)).toThrow(LedgerLockedError);
+    release();
+    release();
+    expect(existsSync(`${file}.lock`)).toBe(false);
+    acquireLedgerLock(file)();
+  });
+
+  it("writes through a per-writer temp file and leaves none behind", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ledger-"));
+    const file = join(dir, "budget-ledger.json");
+    writeFileSync(file, JSON.stringify(emptyLedger()));
+    writeFileSync(`${file}.tmp`, "a stale temp file from another writer");
+    createBudgetLedger(fileLedgerStore(file)).record(entry(0.01));
+    expect(readFileSync(`${file}.tmp`, "utf8")).toBe("a stale temp file from another writer");
+    expect(readdirSync(dir).sort()).toEqual(["budget-ledger.json", "budget-ledger.json.tmp"]);
   });
 
   it("treats a malformed ledger file as an error, never as a fresh budget", () => {

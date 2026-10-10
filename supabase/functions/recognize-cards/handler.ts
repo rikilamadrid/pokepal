@@ -120,12 +120,46 @@ type ParsedUpload =
   | { ok: true; bytes: Uint8Array; mediaType: ImageMediaType; mode: ScanBatch["mode"] }
   | { ok: false; status: number; code: LogCode };
 
-async function readUpload(request: Request): Promise<ParsedUpload> {
+/** The largest request body accepted: one image plus multipart overhead. */
+export const MAX_BODY_BYTES = MAX_IMAGE_BYTES + 64 * 1024;
+
+/**
+ * Read the body, stopping as soon as it passes MAX_BODY_BYTES, whatever
+ * Content-Length says (a streamed upload may send none). Null means too large.
+ */
+async function readBoundedBody(request: Request): Promise<Uint8Array<ArrayBuffer> | null> {
   const declared = Number(request.headers.get("content-length") ?? "0");
-  if (declared > MAX_IMAGE_BYTES + 64 * 1024) return { ok: false, status: 413, code: "too-large" };
+  if (declared > MAX_BODY_BYTES) return null;
+  if (!request.body) return new Uint8Array(0);
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_BODY_BYTES) {
+      await reader.cancel().catch(() => {});
+      return null;
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body;
+}
+
+async function readUpload(request: Request): Promise<ParsedUpload> {
   let form: FormData;
   try {
-    form = await request.formData();
+    const body = await readBoundedBody(request);
+    if (!body) return { ok: false, status: 413, code: "too-large" };
+    const contentType = request.headers.get("content-type") ?? "";
+    form = await new Response(body, { headers: { "content-type": contentType } }).formData();
   } catch {
     return { ok: false, status: 400, code: "bad-request" };
   }

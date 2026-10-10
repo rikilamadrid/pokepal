@@ -4,7 +4,14 @@ import { createTcgdexProvider } from "@/lib/catalog/tcgdex";
 import { createAnthropicModel } from "../../supabase/functions/recognize-cards/model";
 import { createMemoryCatalog } from "../../test/helpers/memory-catalog";
 import { createRecordedModel, runEvaluation } from "./harness";
-import { BudgetExceededError, createBudgetLedger, fileLedgerStore, memoryLedgerStore } from "./ledger";
+import {
+  BudgetExceededError,
+  LedgerLockedError,
+  acquireLedgerLock,
+  createBudgetLedger,
+  fileLedgerStore,
+  memoryLedgerStore,
+} from "./ledger";
 import { loadManifest } from "./manifest";
 import { displayPath, writeReport } from "./report";
 
@@ -22,7 +29,8 @@ import { displayPath, writeReport } from "./report";
  * A live run is a human gate (paid calls). It needs `ANTHROPIC_API_KEY` in the
  * environment and `--spend-limit-confirmed`, which states that the human has
  * confirmed a spend limit on the API account. The ledger in
- * `budget-ledger.json` caps total spend at €5 across all runs.
+ * `budget-ledger.json` caps total spend at €5 across all runs; a live run holds
+ * an exclusive lock on it, so a second live run refuses to start.
  */
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
@@ -54,6 +62,23 @@ async function main(): Promise<number> {
   }
 
   const manifest = loadManifest(values.manifest);
+  let release = () => {};
+  if (!dryRun) {
+    try {
+      release = acquireLedgerLock(LEDGER_FILE);
+    } catch (error) {
+      if (!(error instanceof LedgerLockedError)) throw error;
+      console.error(`${error.message} Nothing was called.`);
+      return 4;
+    }
+    process.once("exit", release);
+    for (const signal of ["SIGINT", "SIGTERM"] as const) {
+      process.once(signal, () => {
+        release();
+        process.exit(130);
+      });
+    }
+  }
   const fileStore = fileLedgerStore(LEDGER_FILE);
   const ledger = createBudgetLedger(dryRun ? memoryLedgerStore(fileStore.read()) : fileStore);
   const paid = dryRun ? null : createAnthropicModel({ apiKey });
@@ -79,6 +104,8 @@ async function main(): Promise<number> {
       return 3;
     }
     throw error;
+  } finally {
+    release();
   }
 }
 

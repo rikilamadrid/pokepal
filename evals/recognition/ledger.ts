@@ -1,4 +1,5 @@
-import { readFileSync, renameSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { closeSync, openSync, readFileSync, renameSync, rmSync, writeFileSync, writeSync } from "node:fs";
 import { z } from "zod";
 
 /**
@@ -65,10 +66,49 @@ export function fileLedgerStore(path: string): LedgerStore {
       return parsed.data;
     },
     write(state) {
-      const temp = `${path}.tmp`;
+      const temp = `${path}.${process.pid}.${randomUUID()}.tmp`;
       writeFileSync(temp, `${JSON.stringify(state, null, 2)}\n`);
       renameSync(temp, path);
     },
+  };
+}
+
+/** Another live run holds the ledger. */
+export class LedgerLockedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LedgerLockedError";
+  }
+}
+
+/**
+ * Exclusive lock on the ledger file for the lifetime of a live run, so two
+ * live runs can never interleave their read-modify-write of the spend. The
+ * lock is a `<ledger>.lock` file created with `wx` (fails if it exists).
+ * Returns the release function; releasing twice is harmless.
+ */
+export function acquireLedgerLock(path: string): () => void {
+  const lock = `${path}.lock`;
+  let fd: number;
+  try {
+    fd = openSync(lock, "wx");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    throw new LedgerLockedError(
+      `Budget ledger ${path} is locked by another live run (${lock}). ` +
+        "Wait for it to finish; if no run is active, a crashed run left the lock behind and it can be removed.",
+    );
+  }
+  try {
+    writeSync(fd, `${process.pid}\n`);
+  } finally {
+    closeSync(fd);
+  }
+  let held = true;
+  return () => {
+    if (!held) return;
+    held = false;
+    rmSync(lock, { force: true });
   };
 }
 
