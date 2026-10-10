@@ -1,0 +1,41 @@
+{
+  "description": "Hand-written stand-in for one batch photo's model output (three cards). Not a real model response; used only to drive the fixture transport.",
+  "extractions": [
+    {
+      "name": "Charizard VMAX",
+      "collectorNumber": "020",
+      "setOfficialCount": 189,
+      "setCodeHint": null,
+      "hp": 330,
+      "language": "en",
+      "regulationMark": "D",
+      "finishHint": "holo",
+      "bbox": { "x": 0.05, "y": 0.1, "w": 0.28, "h": 0.4 },
+      "modelConfidence": 0.92
+    },
+    {
+      "name": null,
+      "collectorNumber": "20",
+      "setOfficialCount": 189,
+      "setCodeHint": null,
+      "hp": null,
+      "language": "en",
+      "regulationMark": null,
+      "finishHint": null,
+      "bbox": { "x": 0.36, "y": 0.1, "w": 0.28, "h": 0.4 },
+      "modelConfidence": 0.41
+    },
+    {
+      "name": "Missingno",
+      "collectorNumber": "999",
+      "setOfficialCount": 999,
+      "setCodeHint": null,
+      "hp": null,
+      "language": "en",
+      "regulationMark": null,
+      "finishHint": null,
+      "bbox": { "x": 0.67, "y": 0.1, "w": 0.28, "h": 0.4 },
+      "modelConfidence": 0.2
+    }
+  ]
+}
