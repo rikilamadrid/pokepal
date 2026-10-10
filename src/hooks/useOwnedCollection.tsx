@@ -30,6 +30,11 @@ import {
   type OwnedState,
 } from "@/lib/owned-cards";
 import { ownershipFor, printingDuplicates } from "@/lib/collection-utils";
+import {
+  applyOwnedSync,
+  resetForOwner,
+  type OwnedSyncChanges,
+} from "@/lib/owned-sync";
 
 /**
  * PokéPal 2.0 owned-card store: physical copies (`OwnedCard`) of catalog
@@ -51,6 +56,10 @@ interface OwnedCollectionContextValue {
   ownershipFor: (printingId: string) => OwnershipSummary;
   /** Printing ids owned more than once → copy count. */
   printingDuplicates: () => Map<string, number>;
+  /** Apply the local half of a cloud sync (useOwnedSync only). */
+  applySync: (changes: OwnedSyncChanges) => void;
+  /** Drop copies synced under any account other than `ownerId` (useOwnedSync only). */
+  resetForOwner: (ownerId: string) => void;
 }
 
 const OwnedCollectionContext =
@@ -122,6 +131,14 @@ export function OwnedCollectionProvider({
     setState((prev) => releaseOwnedCopy(prev, id, at));
   }, []);
 
+  const applySync = useCallback((changes: OwnedSyncChanges) => {
+    setState((prev) => applyOwnedSync(prev, changes));
+  }, []);
+
+  const resetOwner = useCallback((ownerId: string) => {
+    setState((prev) => resetForOwner(prev, ownerId));
+  }, []);
+
   const duplicates = useMemo(() => printingDuplicates(state.owned), [state.owned]);
 
   const ownershipForPrinting = useCallback(
@@ -141,6 +158,8 @@ export function OwnedCollectionProvider({
       releaseCopy,
       ownershipFor: ownershipForPrinting,
       printingDuplicates: printingDuplicatesFn,
+      applySync,
+      resetForOwner: resetOwner,
     }),
     [
       state,
@@ -149,6 +168,8 @@ export function OwnedCollectionProvider({
       releaseCopy,
       ownershipForPrinting,
       printingDuplicatesFn,
+      applySync,
+      resetOwner,
     ],
   );
 
