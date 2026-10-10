@@ -1,19 +1,19 @@
 "use client";
 
 import { useRef } from "react";
-import { Camera, ImageUp, Images } from "lucide-react";
+import { Camera, ImageUp, Images, Search } from "lucide-react";
 import { useCamera } from "@/hooks/useCamera";
 import { captureFrame, isNativeCamera, takeNativePhoto } from "@/lib/camera";
 
 interface ViewfinderProps {
-  /** Called with a JPEG data URI once a frame is captured or a file is picked. */
-  onCapture: (dataUri: string) => void;
-  /** Skip the photo — the card gets generated SVG art instead. */
+  /** Called with the photo (in memory only) once a frame is captured or a file is picked. */
+  onCapture: (photo: Blob) => void;
+  /** Skip the photo and find a card by name or number instead. */
   onSkip: () => void;
 }
 
 /**
- * Step 1 — capture a card photo. On native (Capacitor) the OS camera / library
+ * Capture a photo of one or more cards. On native (Capacitor) the OS camera / library
  * handles capture via {@link NativeViewfinder}; on the web it's a live rear feed
  * inside a golden target frame with a shutter, falling back to file upload when
  * the camera is unavailable or denied.
@@ -34,7 +34,7 @@ function NativeViewfinder({ onCapture, onSkip }: ViewfinderProps) {
     try {
       onCapture(await takeNativePhoto(source));
     } catch {
-      // User cancelled or denied — stay on the step so they can retry or skip.
+      // User cancelled or denied — stay on the step so they can retry or search.
     }
   };
 
@@ -44,7 +44,7 @@ function NativeViewfinder({ onCapture, onSkip }: ViewfinderProps) {
         <Camera className="size-12 text-gold/70" />
       </div>
       <p className="mt-3 text-center text-sm text-ink-muted">
-        Snap your card or pick one from your library.
+        Lay out your cards and snap them all in one photo.
       </p>
       <div className="mt-4 flex flex-col items-center gap-3">
         <button
@@ -64,9 +64,9 @@ function NativeViewfinder({ onCapture, onSkip }: ViewfinderProps) {
         <button
           type="button"
           onClick={onSkip}
-          className="press text-sm font-medium text-ink-muted underline-offset-4 outline-none hover:underline focus-visible:underline"
+          className="press flex items-center gap-2 text-sm font-medium text-ink-muted underline-offset-4 outline-none hover:underline focus-visible:underline"
         >
-          Skip photo &amp; add manually
+          <Search className="size-4" /> Find a card by name instead
         </button>
       </div>
     </div>
@@ -81,17 +81,19 @@ function WebViewfinder({ onCapture, onSkip }: ViewfinderProps) {
   const { videoRef, status } = useCamera();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const onShutter = () => {
+  const onShutter = async () => {
     if (!videoRef.current) return;
-    onCapture(captureFrame(videoRef.current));
+    try {
+      onCapture(await captureFrame(videoRef.current));
+    } catch {
+      // Frame not ready — stay on the viewfinder so the shutter can be tapped again.
+    }
   };
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => onCapture(String(reader.result));
-    reader.readAsDataURL(file);
+    e.target.value = "";
+    if (file) onCapture(file);
   };
 
   const failed = status === "error";
@@ -117,7 +119,7 @@ function WebViewfinder({ onCapture, onSkip }: ViewfinderProps) {
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
             <ImageUp className="size-8 text-ink-muted" />
             <p className="text-sm text-ink-muted">
-              Camera unavailable. Upload a photo of your card instead.
+              Camera unavailable. Upload a photo of your cards instead.
             </p>
           </div>
         ) : (
@@ -133,7 +135,7 @@ function WebViewfinder({ onCapture, onSkip }: ViewfinderProps) {
       <p className="mt-3 text-center text-sm text-ink-muted">
         {failed
           ? "No camera? No problem."
-          : "Line the card up inside the frame."}
+          : "Fit all your cards inside the frame."}
       </p>
 
       {/* Controls */}
@@ -161,9 +163,9 @@ function WebViewfinder({ onCapture, onSkip }: ViewfinderProps) {
         <button
           type="button"
           onClick={onSkip}
-          className="press text-sm font-medium text-ink-muted underline-offset-4 outline-none hover:underline focus-visible:underline"
+          className="press flex items-center gap-2 text-sm font-medium text-ink-muted underline-offset-4 outline-none hover:underline focus-visible:underline"
         >
-          Skip photo &amp; add manually
+          <Search className="size-4" /> Find a card by name instead
         </button>
       </div>
 
