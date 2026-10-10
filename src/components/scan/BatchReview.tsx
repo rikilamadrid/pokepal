@@ -11,7 +11,8 @@ interface BatchReviewProps {
   onSearch: (candidateId: string) => void;
   onRemove: (candidateId: string) => void;
   onAddBySearch: () => void;
-  onRestart: () => void;
+  /** Back to the camera for another photo; the cards above stay. */
+  onNewPhoto: () => void;
   onSave: () => void;
 }
 
@@ -26,7 +27,7 @@ export function BatchReview({
   onSearch,
   onRemove,
   onAddBySearch,
-  onRestart,
+  onNewPhoto,
   onSave,
 }: BatchReviewProps) {
   const kept = items.filter((i) => i.candidate.status !== "rejected");
@@ -64,7 +65,7 @@ export function BatchReview({
         </button>
         <button
           type="button"
-          onClick={onRestart}
+          onClick={onNewPhoto}
           className="press flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-surface-raised text-sm font-semibold text-ink outline-none focus-visible:ring-2 focus-visible:ring-red"
         >
           <Camera className="size-4" /> New photo

@@ -20,6 +20,8 @@ export interface RecognitionRequest {
   /** Prepared JPEG, held in memory for the request only. */
   image: Blob;
   mode: ScanBatch["mode"];
+  /** Aborted when the child leaves mid-scan; a network transport hands it to fetch. */
+  signal?: AbortSignal;
 }
 
 /** One resolved card as the server (or a fixture) returns it. */

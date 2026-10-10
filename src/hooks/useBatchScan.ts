@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { useOwnedCollection } from "@/hooks/useOwnedCollection";
 import { RecognitionError, recognize } from "@/lib/recognition";
 import { getScanTransport } from "@/lib/scan-transport";
+import { INITIAL_BATCH_SCAN, batchScanReducer } from "@/lib/batch-scan";
 import {
   addSearchedCard,
   choosePrinting,
@@ -15,7 +16,7 @@ import {
 } from "@/lib/scan-review";
 import type { CardPrinting } from "@/types/catalog";
 
-export type BatchScanPhase = "capture" | "scanning" | "review" | "error";
+export type { BatchScanPhase } from "@/lib/batch-scan";
 
 /** Where a search result goes: a scanned card being corrected, or a new card. */
 export type SearchTarget = { kind: "correct"; candidateId: string } | { kind: "add" };
@@ -24,45 +25,49 @@ export type SearchTarget = { kind: "correct"; candidateId: string } | { kind: "a
  * Batch Scan state: capture → scanning → review (or error) → save.
  *
  * The photo lives only in a ref while recognition runs (and for a retry after
- * an error). It is dropped as soon as a batch comes back, when the child starts
- * over, and when the sheet unmounts — it never enters React state, storage, or
- * the review items.
+ * an error). It is dropped as soon as a batch comes back, when the child takes
+ * a new photo or leaves the camera, and when the sheet unmounts — it never
+ * enters React state, storage, or the review items. Each run has its own
+ * AbortController, aborted on all of those exits so an in-flight scan never
+ * reaches the transport after the child has moved on.
+ *
+ * Reviewed cards survive a new photo: the next batch appends to them.
  */
 export function useBatchScan() {
   const { addOwnedCards, ownershipFor } = useOwnedCollection();
-  const [phase, setPhase] = useState<BatchScanPhase>("capture");
-  const [items, setItems] = useState<ReviewItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(batchScanReducer, INITIAL_BATCH_SCAN);
   const photoRef = useRef<Blob | null>(null);
-  const runRef = useRef(0);
+  const runRef = useRef<AbortController | null>(null);
 
   const copiesOf = useCallback((id: string) => ownershipFor(id).copies, [ownershipFor]);
 
-  useEffect(
-    () => () => {
-      photoRef.current = null;
-      runRef.current++;
-    },
-    [],
-  );
+  /** Cancel any in-flight scan and drop the photo. */
+  const dropPhoto = useCallback(() => {
+    runRef.current?.abort();
+    runRef.current = null;
+    photoRef.current = null;
+  }, []);
+
+  useEffect(() => dropPhoto, [dropPhoto]);
 
   const run = useCallback(async () => {
     const photo = photoRef.current;
     if (!photo) return;
-    const runId = ++runRef.current;
-    setPhase("scanning");
-    setError(null);
+    runRef.current?.abort();
+    const controller = new AbortController();
+    runRef.current = controller;
+    dispatch({ type: "scanStarted" });
     try {
       const transport = await getScanTransport();
-      const batch = await recognize(photo, { mode: "batch", transport });
-      if (runId !== runRef.current) return;
+      const batch = await recognize(photo, { mode: "batch", transport, signal: controller.signal });
+      if (controller.signal.aborted) return;
+      runRef.current = null;
       photoRef.current = null;
-      setItems((prev) => [...prev, ...startReview(batch, copiesOf)]);
-      setPhase("review");
+      dispatch({ type: "scanned", items: startReview(batch, copiesOf) });
     } catch (err) {
-      if (runId !== runRef.current) return;
-      setError(friendlyError(err));
-      setPhase("error");
+      if (controller.signal.aborted) return;
+      runRef.current = null;
+      dispatch({ type: "scanFailed", message: friendlyError(err) });
     }
   }, [copiesOf]);
 
@@ -74,58 +79,58 @@ export function useBatchScan() {
     [run],
   );
 
-  /** Drop the photo and any results, back to the camera. */
-  const restart = useCallback(() => {
-    photoRef.current = null;
-    runRef.current++;
-    setItems([]);
-    setError(null);
-    setPhase("capture");
-  }, []);
+  /** Drop the photo and go back to the camera, keeping every reviewed card. */
+  const newPhoto = useCallback(() => {
+    dropPhoto();
+    dispatch({ type: "newPhoto" });
+  }, [dropPhoto]);
 
   /** Leave the camera (or a failed scan) for the review list, to add cards by search. */
   const reviewWithoutPhoto = useCallback(() => {
-    photoRef.current = null;
-    runRef.current++;
-    setError(null);
-    setPhase("review");
-  }, []);
+    dropPhoto();
+    dispatch({ type: "reviewWithoutPhoto" });
+  }, [dropPhoto]);
+
+  const edit = useCallback(
+    (update: (items: ReviewItem[]) => ReviewItem[]) => dispatch({ type: "edit", update }),
+    [],
+  );
 
   const choose = useCallback(
     (candidateId: string, printingId: string) =>
-      setItems((prev) => choosePrinting(prev, candidateId, printingId, copiesOf)),
-    [copiesOf],
+      edit((prev) => choosePrinting(prev, candidateId, printingId, copiesOf)),
+    [copiesOf, edit],
   );
 
   const remove = useCallback(
-    (candidateId: string) => setItems((prev) => rejectCandidate(prev, candidateId)),
-    [],
+    (candidateId: string) => edit((prev) => rejectCandidate(prev, candidateId)),
+    [edit],
   );
 
   const applySearch = useCallback(
     (target: SearchTarget, printing: CardPrinting) =>
-      setItems((prev) =>
+      edit((prev) =>
         target.kind === "correct"
           ? correctWithPrinting(prev, target.candidateId, printing, copiesOf)
           : addSearchedCard(prev, printing, copiesOf),
       ),
-    [copiesOf],
+    [copiesOf, edit],
   );
 
   /** Save every confirmed card in one batch; returns how many were added. */
   const save = useCallback((): number => {
-    const added = addOwnedCards(toNewOwnedCards(items));
-    setItems([]);
+    const added = addOwnedCards(toNewOwnedCards(state.items));
+    dispatch({ type: "saved" });
     return added.length;
-  }, [addOwnedCards, items]);
+  }, [addOwnedCards, state.items]);
 
   return {
-    phase,
-    items,
-    error,
+    phase: state.phase,
+    items: state.items,
+    error: state.error,
     scan,
     retry: run,
-    restart,
+    newPhoto,
     reviewWithoutPhoto,
     choose,
     remove,

@@ -36,6 +36,8 @@ export interface RecognizeOptions {
   prepare?: (image: Blob, mode: ScanBatch["mode"]) => Promise<Blob>;
   now?: () => Date;
   newId?: () => string;
+  /** Cancels the scan: once aborted, the photo is never handed to the transport. */
+  signal?: AbortSignal;
 }
 
 /** Base64 openings of JPEG, PNG, GIF and WebP files. */
@@ -58,16 +60,22 @@ function containsInlineData(value: unknown): boolean {
   return false;
 }
 
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (signal?.aborted) throw new RecognitionError("Recognition was cancelled");
+}
+
 export async function recognize(image: Blob, options: RecognizeOptions): Promise<ScanBatch> {
   const started = performance.now();
-  const { mode, transport } = options;
+  const { mode, transport, signal } = options;
   const newId = options.newId ?? (() => crypto.randomUUID());
   const prepare = options.prepare ?? prepareImage;
 
+  throwIfAborted(signal);
   const prepared = await prepare(image, mode);
+  throwIfAborted(signal);
   let response: unknown;
   try {
-    response = await transport.recognize({ image: prepared, mode });
+    response = await transport.recognize({ image: prepared, mode, signal });
   } catch (error) {
     if (error instanceof RecognitionError) throw error;
     const reason = error instanceof Error ? error.message : String(error);

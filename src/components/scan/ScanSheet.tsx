@@ -198,7 +198,7 @@ export function ScanSheet({ onClose }: ScanSheetProps) {
           <ScanError
             message={scan.error}
             onRetry={() => void scan.retry()}
-            onRestart={scan.restart}
+            onNewPhoto={scan.newPhoto}
             onFindByName={findByName}
           />
         ) : (
@@ -209,7 +209,7 @@ export function ScanSheet({ onClose }: ScanSheetProps) {
             onSearch={(candidateId) => setSearch({ kind: "correct", candidateId })}
             onRemove={scan.remove}
             onAddBySearch={() => setSearch({ kind: "add" })}
-            onRestart={scan.restart}
+            onNewPhoto={scan.newPhoto}
             onSave={handleSave}
           />
         )}
@@ -234,11 +234,11 @@ function NeedsInternet() {
 interface ScanErrorProps {
   message: string | null;
   onRetry: () => void;
-  onRestart: () => void;
+  onNewPhoto: () => void;
   onFindByName: () => void;
 }
 
-function ScanError({ message, onRetry, onRestart, onFindByName }: ScanErrorProps) {
+function ScanError({ message, onRetry, onNewPhoto, onFindByName }: ScanErrorProps) {
   const buttonClass =
     "press min-h-11 rounded-full px-6 py-3 font-semibold outline-none focus-visible:ring-2 focus-visible:ring-red";
   return (
@@ -247,7 +247,7 @@ function ScanError({ message, onRetry, onRestart, onFindByName }: ScanErrorProps
       <button type="button" onClick={onRetry} className={cn(buttonClass, "bg-red text-white")}>
         Try again
       </button>
-      <button type="button" onClick={onRestart} className={cn(buttonClass, "bg-surface-raised text-ink")}>
+      <button type="button" onClick={onNewPhoto} className={cn(buttonClass, "bg-surface-raised text-ink")}>
         Take a new photo
       </button>
       <button type="button" onClick={onFindByName} className={cn(buttonClass, "bg-surface-raised text-ink")}>
