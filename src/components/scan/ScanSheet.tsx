@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, WifiOff, X } from "lucide-react";
+import { ChevronLeft, Layers, WifiOff, X } from "lucide-react";
 import { toast } from "sonner";
 import { useBatchScan, type SearchTarget } from "@/hooks/useBatchScan";
 import { useOnline } from "@/hooks/useOnline";
 import { useOwnedCollection } from "@/hooks/useOwnedCollection";
+import { scanView } from "@/lib/batch-scan";
 import type { CardPrinting, CatalogLanguage } from "@/types/catalog";
 import { Viewfinder } from "./Viewfinder";
 import { BatchReview, ScanningSkeleton } from "./BatchReview";
@@ -114,6 +115,11 @@ export function ScanSheet({ onClose }: ScanSheetProps) {
   };
 
   const title = search ? "Find a card" : PHASE_TITLES[scan.phase];
+  const view = scanView(scan, online);
+  const backToCards =
+    view.backToCards > 0 ? (
+      <BackToCards count={view.backToCards} onClick={scan.reviewWithoutPhoto} />
+    ) : null;
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center">
@@ -188,19 +194,28 @@ export function ScanSheet({ onClose }: ScanSheetProps) {
             onPick={handlePick}
             onCancel={() => setSearch(null)}
           />
-        ) : !online && scan.phase !== "review" ? (
-          <NeedsInternet />
-        ) : scan.phase === "capture" ? (
-          <Viewfinder onCapture={scan.scan} onSkip={findByName} />
-        ) : scan.phase === "scanning" ? (
+        ) : view.body === "needsInternet" ? (
+          <>
+            {backToCards}
+            <NeedsInternet />
+          </>
+        ) : view.body === "capture" ? (
+          <>
+            {backToCards}
+            <Viewfinder onCapture={scan.scan} onSkip={findByName} />
+          </>
+        ) : view.body === "scanning" ? (
           <ScanningSkeleton />
-        ) : scan.phase === "error" ? (
-          <ScanError
-            message={scan.error}
-            onRetry={() => void scan.retry()}
-            onNewPhoto={scan.newPhoto}
-            onFindByName={findByName}
-          />
+        ) : view.body === "error" ? (
+          <>
+            {backToCards}
+            <ScanError
+              message={scan.error}
+              onRetry={() => void scan.retry()}
+              onNewPhoto={scan.newPhoto}
+              onFindByName={findByName}
+            />
+          </>
         ) : (
           <BatchReview
             items={scan.items}
@@ -215,6 +230,20 @@ export function ScanSheet({ onClose }: ScanSheetProps) {
         )}
       </div>
     </div>
+  );
+}
+
+/** Big tap back to the review list when reviewed cards are waiting off-screen. */
+function BackToCards({ count, onClick }: { count: number; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="press mb-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gold px-5 py-3 font-semibold text-black outline-none focus-visible:ring-2 focus-visible:ring-red"
+    >
+      <Layers className="size-5" aria-hidden />
+      {count === 1 ? "Back to my 1 card" : `Back to my ${count} cards`}
+    </button>
   );
 }
 

@@ -46,3 +46,28 @@ export function batchScanReducer(state: BatchScanState, action: BatchScanAction)
       return { ...state, items: [] };
   }
 }
+
+/** What the scan sheet body shows when no search panel is open. */
+export type ScanBody = "needsInternet" | "capture" | "scanning" | "error" | "review";
+
+export interface ScanView {
+  body: ScanBody;
+  /** Reviewed cards waiting off-screen: > 0 shows "Back to my N cards". */
+  backToCards: number;
+}
+
+/** Reviewed cards the child has not removed. */
+export function keptCount(items: readonly ReviewItem[]): number {
+  return items.filter((i) => i.candidate.status !== "rejected").length;
+}
+
+/**
+ * Pick the sheet body. Offline, nothing is captured: every phase but review
+ * shows "needs internet". Whenever the review list is off-screen and still
+ * holds kept cards, the body offers a way back to them — saving is local, so
+ * this works offline too.
+ */
+export function scanView(state: Pick<BatchScanState, "phase" | "items">, online: boolean): ScanView {
+  const body: ScanBody = !online && state.phase !== "review" ? "needsInternet" : state.phase;
+  return { body, backToCards: body === "review" || body === "scanning" ? 0 : keptCount(state.items) };
+}
