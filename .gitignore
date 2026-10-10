@@ -45,3 +45,10 @@ next-env.d.ts
 context/current-ticket.md
 context/handoff.md
 /.pathfinder/
+
+# recognition eval — dry-run reports are local pipeline checks, never committed
+/evals/recognition/reports/*-dry-run.*
+
+# budget ledger lock and temp files (a live run in progress)
+/evals/recognition/budget-ledger.json.lock
+/evals/recognition/budget-ledger.json.*.tmp

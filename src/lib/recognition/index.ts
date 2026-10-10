@@ -1,3 +1,4 @@
+import { containsInlineData } from "@/lib/recognition/image-guard";
 import { prepareImage } from "@/lib/recognition/image-prep";
 import {
   RecognitionError,
@@ -16,12 +17,15 @@ export { resolve, rankPrintings } from "@/lib/recognition/resolve";
 export type { ResolveResult } from "@/lib/recognition/resolve";
 export { prepareImage, targetSize, LONG_EDGE } from "@/lib/recognition/image-prep";
 export {
+  CARD_FAILURES,
   RecognitionError,
-  createEdgeTransport,
   createFixtureTransport,
   recognitionResponseSchema,
 } from "@/lib/recognition/transport";
+export { createEdgeTransport, recognizeCardsEndpoint } from "@/lib/recognition/edge-transport";
+export type { EdgeTransportOptions } from "@/lib/recognition/edge-transport";
 export type {
+  CardFailure,
   FixtureTransportOptions,
   RecognitionRequest,
   RecognitionResponse,
@@ -36,26 +40,6 @@ export interface RecognizeOptions {
   prepare?: (image: Blob, mode: ScanBatch["mode"]) => Promise<Blob>;
   now?: () => Date;
   newId?: () => string;
-}
-
-/** Base64 openings of JPEG, PNG, GIF and WebP files. */
-const IMAGE_BASE64_MAGIC = /\/9j\/|iVBORw0KGgo|R0lGOD|UklGR/;
-/** An unbroken base64 run this long is encoded bytes, not card text. */
-const BASE64_RUN = /[A-Za-z0-9+/=_-]{120,}/;
-
-/** True if a string looks like image bytes: a data URI, image base64, or a long base64 run. */
-function looksLikeImageData(value: string): boolean {
-  return /^\s*data:/i.test(value) || IMAGE_BASE64_MAGIC.test(value) || BASE64_RUN.test(value);
-}
-
-/** True if any string inside `value` looks like inline image data. */
-function containsInlineData(value: unknown): boolean {
-  if (typeof value === "string") return looksLikeImageData(value);
-  if (Array.isArray(value)) return value.some(containsInlineData);
-  if (value !== null && typeof value === "object") {
-    return Object.values(value).some(containsInlineData);
-  }
-  return false;
 }
 
 export async function recognize(image: Blob, options: RecognizeOptions): Promise<ScanBatch> {

@@ -22,11 +22,27 @@ export interface RecognitionRequest {
   mode: ScanBatch["mode"];
 }
 
+/**
+ * Why one card of a batch could not be resolved (decision D11): the rest of the
+ * batch is still returned and this card comes back `unmatched`.
+ * - `catalog-error` — its catalog lookup failed
+ * - `invalid-extraction` — the model's reading of this card broke the contract
+ * - `image-data` — its data tripped the image-data guard
+ */
+export type CardFailure = "catalog-error" | "invalid-extraction" | "image-data";
+export const CARD_FAILURES = [
+  "catalog-error",
+  "invalid-extraction",
+  "image-data",
+] as const satisfies readonly CardFailure[];
+
 /** One resolved card as the server (or a fixture) returns it. */
 export interface ResolvedCard {
   extracted: ExtractedCardFields;
   tier: MatchTier;
   matches: PrintingMatch[];
+  /** Present only when this card failed on its own; always with `tier: "unmatched"`. */
+  failure?: CardFailure;
 }
 
 /** What a transport returns: resolved cards and server-side timings, no image data. */
@@ -72,9 +88,13 @@ export const recognitionResponseSchema = z.strictObject({
               message: "printing imageUrl must be an https URL",
             }),
         ),
+        failure: z.enum(CARD_FAILURES).optional(),
       })
       .refine((c) => (c.tier === "unmatched") === (c.matches.length === 0), {
         message: "unmatched ⇔ no matches",
+      })
+      .refine((c) => c.failure === undefined || c.tier === "unmatched", {
+        message: "a failed card is unmatched",
       }),
   ),
   timings: z.strictObject({ uploadMs: ms, modelMs: ms, resolveMs: ms }),
@@ -107,15 +127,6 @@ export function createFixtureTransport(options: FixtureTransportOptions): Recogn
         cards,
         timings: { uploadMs: 0, modelMs: options.modelMs ?? 0, resolveMs: performance.now() - started },
       };
-    },
-  };
-}
-
-/** Placeholder for the `recognize-cards` Edge Function (ticket 19.2). Makes no request. */
-export function createEdgeTransport(): RecognitionTransport {
-  return {
-    async recognize() {
-      throw new RecognitionError("Card recognition is not available yet.");
     },
   };
 }

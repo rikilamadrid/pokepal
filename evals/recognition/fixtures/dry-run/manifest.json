@@ -1,0 +1,131 @@
+{
+  "name": "dry-run-synthetic",
+  "description": "Pipeline check only. One blank placeholder image with hand-written model readings replayed in place of a paid call; resolved against the offline recorded catalog. Never reported as accuracy.",
+  "synthetic": true,
+  "photos": [
+    {
+      "id": "batch-three-cards",
+      "path": "blank-card.png",
+      "mode": "batch",
+      "expected": [
+        "tcgdex:en:swsh3-20",
+        "tcgdex:en:swsh10-020"
+      ],
+      "recordedCards": [
+        {
+          "name": "Charizard VMAX",
+          "collectorNumber": "020",
+          "setOfficialCount": 189,
+          "setCodeHint": null,
+          "hp": 330,
+          "language": "en",
+          "regulationMark": "D",
+          "finishHint": "holo",
+          "bbox": {
+            "x": 0.05,
+            "y": 0.1,
+            "w": 0.28,
+            "h": 0.4
+          },
+          "modelConfidence": 0.92
+        },
+        {
+          "name": null,
+          "collectorNumber": "20",
+          "setOfficialCount": 189,
+          "setCodeHint": null,
+          "hp": null,
+          "language": "en",
+          "regulationMark": null,
+          "finishHint": null,
+          "bbox": {
+            "x": 0.36,
+            "y": 0.1,
+            "w": 0.28,
+            "h": 0.4
+          },
+          "modelConfidence": 0.41
+        },
+        {
+          "name": "Missingno",
+          "collectorNumber": "999",
+          "setOfficialCount": 999,
+          "setCodeHint": null,
+          "hp": null,
+          "language": "en",
+          "regulationMark": null,
+          "finishHint": null,
+          "bbox": {
+            "x": 0.67,
+            "y": 0.1,
+            "w": 0.28,
+            "h": 0.4
+          },
+          "modelConfidence": 0.2
+        }
+      ]
+    },
+    {
+      "id": "trade-check-spanish-read-as-english",
+      "path": "blank-card.png",
+      "mode": "trade-check",
+      "expected": [
+        "tcgdex:es:swsh3-20"
+      ],
+      "recordedCards": [
+        {
+          "name": "Charizard VMAX",
+          "collectorNumber": "020",
+          "setOfficialCount": 189,
+          "setCodeHint": null,
+          "hp": 330,
+          "language": "en",
+          "regulationMark": "D",
+          "finishHint": null,
+          "bbox": {
+            "x": 0.1,
+            "y": 0.1,
+            "w": 0.8,
+            "h": 0.8
+          },
+          "modelConfidence": 0.9
+        }
+      ]
+    },
+    {
+      "id": "batch-one-malformed-reading",
+      "path": "blank-card.png",
+      "mode": "batch",
+      "expected": [
+        "tcgdex:en:swsh1-178",
+        "tcgdex:en:30th-c-001"
+      ],
+      "recordedCards": [
+        {
+          "name": "Professor's Research",
+          "collectorNumber": "178",
+          "setOfficialCount": 202,
+          "setCodeHint": null,
+          "hp": null,
+          "language": "en",
+          "regulationMark": "D",
+          "finishHint": null,
+          "bbox": null,
+          "modelConfidence": 0.9
+        },
+        {
+          "name": "Charizard",
+          "collectorNumber": "001",
+          "setOfficialCount": 30,
+          "setCodeHint": null,
+          "hp": "120",
+          "language": "en",
+          "regulationMark": null,
+          "finishHint": null,
+          "bbox": null,
+          "modelConfidence": 0.9
+        }
+      ]
+    }
+  ]
+}

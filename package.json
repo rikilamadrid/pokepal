@@ -12,7 +12,8 @@
     "native:sync": "next build && npx cap sync",
     "native:ios": "next build && npx cap sync ios && npx cap open ios",
     "native:android": "next build && npx cap sync android && npx cap open android",
-    "test": "vitest run"
+    "test": "vitest run",
+    "eval:recognition": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./evals/recognition/register.mjs evals/recognition/run.ts"
   },
   "dependencies": {
     "@capacitor/android": "^7.6.7",
