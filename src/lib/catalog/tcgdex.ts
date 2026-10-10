@@ -215,6 +215,20 @@ export function mapTcgdexCard(
   return printing.data;
 }
 
+/** Rendered size of a TCGdex card image: `low` for tiles, `high` for the detail sheet. */
+export type CatalogImageQuality = "low" | "high";
+
+/**
+ * Loadable URL for a printing's catalog image. TCGdex stores a base asset URL;
+ * the file is `{base}/{quality}.webp`. Null in, null out (→ placeholder).
+ */
+export function catalogImageSrc(
+  imageUrl: string | null,
+  quality: CatalogImageQuality,
+): string | null {
+  return imageUrl ? `${imageUrl.replace(/\/+$/, "")}/${quality}.webp` : null;
+}
+
 // ---- Provider ----------------------------------------------------------------
 
 /** Default transport: HTTPS GET against the public TCGdex API (no key). */

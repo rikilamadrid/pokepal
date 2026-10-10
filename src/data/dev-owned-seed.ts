@@ -7,9 +7,11 @@ import type { NewOwnedCard } from "@/lib/owned-cards";
  * has 2.0 data before recognition exists. Never imported by production code.
  *
  * Each snapshot is `mapTcgdexCard` applied to a recorded TCGdex fixture under
- * `test/fixtures/tcgdex/` (fetchedAt pinned); `test/collection/dev-seed.test.ts`
- * fails if they drift. Includes three Charizard VMAX printings (en + es
- * Darkness Ablaze, en Champion's Path) so exact-printing counts are visible.
+ * `test/fixtures/tcgdex/` (fetchedAt pinned); the "dev seed" suite in
+ * `test/collection/owned-store.test.ts` fails if they drift. Includes three
+ * Charizard VMAX printings (en + es Darkness Ablaze, en Champion's Path) so
+ * exact-printing counts are visible, and `30th-c-001`, which has no catalog
+ * image, so the placeholder is visible.
  */
 export const DEV_PRINTINGS: readonly CardPrinting[] = [
   {
@@ -178,13 +180,47 @@ export const DEV_PRINTINGS: readonly CardPrinting[] = [
     ],
     "imageUrl": "https://assets.tcgdex.net/en/swsh/swsh1/178",
     "fetchedAt": "2026-10-09T12:00:00.000Z"
+  },
+  {
+    "id": "tcgdex:en:30th-c-001",
+    "provider": "tcgdex",
+    "providerCardId": "30th-c-001",
+    "language": "en",
+    "name": "Charizard",
+    "category": "pokemon",
+    "collectorNumber": "001",
+    "set": {
+      "id": "30th-c",
+      "name": "30th Classic Collection",
+      "officialCount": 30,
+      "totalCount": 30,
+      "releaseDate": null,
+      "symbolUrl": null,
+      "logoUrl": null
+    },
+    "rarity": null,
+    "energyTypes": [
+      "fire"
+    ],
+    "stage": "Stage2",
+    "hp": 120,
+    "dexNos": [
+      6
+    ],
+    "illustrator": "Mitsuhiro Arita",
+    "regulationMark": null,
+    "availableFinishes": [
+      "holo"
+    ],
+    "imageUrl": null,
+    "fetchedAt": "2026-10-09T12:00:00.000Z"
   }
 ];
 
-const [charizardEn, charizardEs, charizardCp, charizardExJa, research] =
+const [charizardEn, charizardEs, charizardCp, charizardExJa, research, noImage] =
   DEV_PRINTINGS;
 
-/** Three copies of one printing (×3), plus one copy each of four others. */
+/** Three copies of one printing (×3), plus one copy each of five others. */
 export const DEV_OWNED_SEED: readonly NewOwnedCard[] = [
   { printing: charizardEn, source: "manual", finish: "holo", favorite: true },
   { printing: charizardEn, source: "manual", finish: "holo" },
@@ -193,4 +229,5 @@ export const DEV_OWNED_SEED: readonly NewOwnedCard[] = [
   { printing: charizardCp, source: "manual", finish: null },
   { printing: charizardExJa, source: "manual", finish: null, favorite: true },
   { printing: research, source: "manual", finish: "holo" },
+  { printing: noImage, source: "manual", finish: null },
 ];
