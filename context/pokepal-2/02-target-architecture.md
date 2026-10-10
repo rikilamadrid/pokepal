@@ -277,6 +277,7 @@ Nothing in Features 18–23 deletes or rewrites legacy data.
 | D8 | Artwork licensing | Hot-link catalog images only; no redistribution; review before store release | Production gate |
 | D9 | Live DB migration | Apply `owned_cards` migration to the live Supabase project | Gate at ticket 18.3 |
 | D10 | Card languages and printing identity | **Decided 2026-10-09** (see below) | Yes (contract change) |
+| D11 | Batch partial failure | **Decided 2026-10-10** (see below) | Yes |
 
 ### Decided
 
@@ -291,3 +292,12 @@ Nothing in Features 18–23 deletes or rewrites legacy data.
   ownership, duplicate badges and Trade Check. `getPrinting` accepts that form or
   the bare provider card id. The catalog adapter rejects an unmapped category or
   energy-type name with `CatalogError` instead of dropping it.
+
+- **D11 — Batch partial failure (2026-10-10, human decision during the 19.1
+  review).** When one card in a scan cannot be resolved — its catalog lookup
+  fails, or its data trips the image-data guard — the rest of the batch is still
+  returned. That card becomes `tier: "unmatched"` with a reason, so the child can
+  retry or search for it manually. Only a failure of the whole request (no
+  response, invalid response) rejects the scan with a `RecognitionError`.
+  Implemented in 19.2 (server) and 20.1 (Batch Scan); 19.1 keeps its merged
+  whole-batch behaviour until then.
