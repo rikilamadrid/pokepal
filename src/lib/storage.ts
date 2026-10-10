@@ -1,4 +1,8 @@
 import type { Card, CardType, Rarity } from "@/types/card";
+import type { CardPrinting } from "@/types/catalog";
+import type { OwnedCard } from "@/types/collection";
+import { cardPrintingSchema } from "@/types/catalog.schema";
+import { ownedCardSchema } from "@/types/collection.schema";
 import { generateCreatureArt } from "@/lib/art-gen";
 
 /** id → deletedAt (ISO). Soft-delete tombstones so releases propagate on sync. */
@@ -152,4 +156,112 @@ export function writeUploadedIds(ids: Set<string>): void {
   } catch {
     // ignore
   }
+}
+
+// ---- PokéPal 2.0 (additive) ---------------------------------------------------
+// OwnedCards, the printing cache, and their tombstones live under their own
+// `v2:*` keys. Nothing below reads or writes a legacy key, and nothing above
+// was changed for 2.0.
+
+/** OwnedCard[] — one record per physical copy. */
+export const OWNED_KEY = "v2:owned";
+/** printing id → CardPrinting snapshot, so owned printings render offline. */
+export const PRINTINGS_KEY = "v2:printings";
+/** OwnedCard soft-delete tombstones (id → deletedAt ISO). */
+export const OWNED_TOMBSTONES_KEY = "v2:owned:tombstones";
+
+/** Cached printings keyed by `CardPrinting.id`. */
+export type PrintingCache = Record<string, CardPrinting>;
+
+function readJson(key: string): unknown {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeJson(key: string, value: unknown): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // storage full / unavailable — the in-memory store stays authoritative
+  }
+}
+
+/**
+ * Read persisted OwnedCards. Each record is validated against the contract
+ * schema; invalid records are dropped, as are repeated ids (first one wins).
+ * Absent / unreadable / SSR → [].
+ */
+export function readOwnedCards(): OwnedCard[] {
+  const parsed = readJson(OWNED_KEY);
+  if (!Array.isArray(parsed)) return [];
+  const seen = new Set<string>();
+  const owned: OwnedCard[] = [];
+  for (const item of parsed) {
+    const result = ownedCardSchema.safeParse(item);
+    if (!result.success || seen.has(result.data.id)) continue;
+    seen.add(result.data.id);
+    owned.push(result.data);
+  }
+  return owned;
+}
+
+/** Persist OwnedCards. No-ops during SSR. */
+export function writeOwnedCards(owned: OwnedCard[]): void {
+  writeJson(OWNED_KEY, owned);
+}
+
+/**
+ * Read the printing cache. Each entry must validate against the contract
+ * schema, sit under its own id, and carry no inline image payload (photos are
+ * never collection assets — only catalog image URLs are kept).
+ */
+export function readPrintings(): PrintingCache {
+  const parsed = readJson(PRINTINGS_KEY);
+  if (!isRecord(parsed)) return {};
+  const cache: PrintingCache = {};
+  for (const [id, value] of Object.entries(parsed)) {
+    const result = cardPrintingSchema.safeParse(value);
+    if (result.success && result.data.id === id && isStorablePrinting(result.data)) {
+      cache[id] = result.data;
+    }
+  }
+  return cache;
+}
+
+/** Persist the printing cache. No-ops during SSR. */
+export function writePrintings(printings: PrintingCache): void {
+  writeJson(PRINTINGS_KEY, printings);
+}
+
+/** True when a printing's image is a remote catalog URL (or absent), never a data URI. */
+export function isStorablePrinting(printing: CardPrinting): boolean {
+  return printing.imageUrl === null || /^https?:\/\//i.test(printing.imageUrl);
+}
+
+/** Read OwnedCard tombstones. Absent / unreadable / SSR → {}. */
+export function readOwnedTombstones(): Tombstones {
+  const parsed = readJson(OWNED_TOMBSTONES_KEY);
+  if (!isRecord(parsed)) return {};
+  const tombstones: Tombstones = {};
+  for (const [id, deletedAt] of Object.entries(parsed)) {
+    if (
+      id.trim() !== "" &&
+      typeof deletedAt === "string" &&
+      Number.isFinite(Date.parse(deletedAt))
+    ) {
+      tombstones[id] = deletedAt;
+    }
+  }
+  return tombstones;
+}
+
+/** Persist OwnedCard tombstones. No-ops during SSR. */
+export function writeOwnedTombstones(tombstones: Tombstones): void {
+  writeJson(OWNED_TOMBSTONES_KEY, tombstones);
 }
