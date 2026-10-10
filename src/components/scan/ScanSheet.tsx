@@ -1,40 +1,43 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, X } from "lucide-react";
+import { ChevronLeft, Layers, WifiOff, X } from "lucide-react";
 import { toast } from "sonner";
-import { useCollection } from "@/hooks/useCollection";
-import { compressImage } from "@/lib/image-compress";
-import type { ScanFormValues } from "@/lib/scan-schema";
+import { useBatchScan, type SearchTarget } from "@/hooks/useBatchScan";
+import { useOnline } from "@/hooks/useOnline";
+import { useOwnedCollection } from "@/hooks/useOwnedCollection";
+import { scanView } from "@/lib/batch-scan";
+import type { CardPrinting, CatalogLanguage } from "@/types/catalog";
 import { Viewfinder } from "./Viewfinder";
-import { ConfirmStep } from "./ConfirmStep";
-import { TagForm } from "./TagForm";
+import { BatchReview, ScanningSkeleton } from "./BatchReview";
+import { CardSearch } from "./CardSearch";
 import { cn } from "@/lib/utils";
 
 interface ScanSheetProps {
   onClose: () => void;
 }
 
-type Step = "viewfinder" | "confirm" | "tag";
-
 const DRAG_DISMISS_PX = 110;
 
-const STEP_TITLES: Record<Step, string> = {
-  viewfinder: "Scan a Card",
-  confirm: "Looking good?",
-  tag: "Tag your card",
-};
+const PHASE_TITLES = {
+  capture: "Scan your cards",
+  scanning: "Scanning…",
+  review: "Check your cards",
+  error: "Uh-oh!",
+} as const;
 
 /**
- * Three-step Scan bottom sheet: viewfinder → confirm → tag. Owns the step state
- * machine and the captured photo; lazy-loaded by the shell so the camera stack
- * stays out of the initial bundle. Dismiss via drag-down, backdrop, ✕, or Escape.
+ * Batch Scan bottom sheet: photograph several cards → review what PokéPal
+ * found → add them in one tap. Lazy-loaded by the shell so the camera stack
+ * stays out of the initial bundle. The photo is held only by `useBatchScan`
+ * and released when the sheet closes. Dismiss via drag-down, backdrop, ✕, or
+ * Escape.
  */
 export function ScanSheet({ onClose }: ScanSheetProps) {
-  const { addCard } = useCollection();
-  const [step, setStep] = useState<Step>("viewfinder");
-  const [rawPhoto, setRawPhoto] = useState<string | null>(null);
-  const [photo, setPhoto] = useState<string | null>(null);
+  const online = useOnline();
+  const { ownershipFor } = useOwnedCollection();
+  const scan = useBatchScan();
+  const [search, setSearch] = useState<SearchTarget | null>(null);
 
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -83,40 +86,40 @@ export function ScanSheet({ onClose }: ScanSheetProps) {
     });
   };
 
-  // Step transitions
-  const handleCapture = (dataUri: string) => {
-    setRawPhoto(dataUri);
-    setStep("confirm");
+  const copiesOf = (printingId: string) => ownershipFor(printingId).copies;
+
+  const searchLanguage = (): CatalogLanguage => {
+    if (search?.kind !== "correct") return "en";
+    const item = scan.items.find((i) => i.candidate.id === search.candidateId);
+    return item?.candidate.extracted.language ?? "en";
   };
-  const handleSkip = () => {
-    setRawPhoto(null);
-    setPhoto(null);
-    setStep("tag");
+
+  const handlePick = (printing: CardPrinting) => {
+    if (search) scan.applySearch(search, printing);
+    setSearch(null);
   };
-  const handleRetake = () => {
-    setRawPhoto(null);
-    setStep("viewfinder");
+
+  const findByName = () => {
+    scan.reviewWithoutPhoto();
+    setSearch({ kind: "add" });
   };
-  const handleConfirm = async () => {
-    if (!rawPhoto) return;
-    setPhoto(await compressImage(rawPhoto));
-    setStep("tag");
+
+  const handleSave = () => {
+    try {
+      const added = scan.save();
+      toast.success(added === 1 ? "1 card added to your collection!" : `${added} cards added to your collection!`);
+      requestClose();
+    } catch {
+      toast.error("Some cards still need your help before saving.");
+    }
   };
-  const handleBack = () => {
-    setStep(rawPhoto ? "confirm" : "viewfinder");
-  };
-  const handleSubmit = (values: ScanFormValues) => {
-    const card = addCard({
-      name: values.name,
-      type: values.type,
-      rarity: values.rarity,
-      favorite: values.favorite,
-      dexNo: values.dexNo || undefined,
-      img: photo ?? undefined,
-    });
-    toast.success(`${card.name} added to your collection!`);
-    requestClose();
-  };
+
+  const title = search ? "Find a card" : PHASE_TITLES[scan.phase];
+  const view = scanView(scan, online);
+  const backToCards =
+    view.backToCards > 0 ? (
+      <BackToCards count={view.backToCards} onClick={scan.reviewWithoutPhoto} />
+    ) : null;
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center">
@@ -135,7 +138,7 @@ export function ScanSheet({ onClose }: ScanSheetProps) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Scan a card"
+        aria-label="Scan your cards"
         onAnimationEnd={onExitAnimationEnd}
         className={cn(
           "glass relative z-10 max-h-[92%] w-full max-w-[480px] overflow-y-auto rounded-t-3xl border-t border-border px-5 pt-2",
@@ -161,19 +164,19 @@ export function ScanSheet({ onClose }: ScanSheetProps) {
 
         {/* Header */}
         <div className="mb-4 flex items-center justify-between gap-3">
-          {step === "viewfinder" ? (
+          {!search ? (
             <span className="size-8" aria-hidden />
           ) : (
             <button
               type="button"
               aria-label="Back"
-              onClick={handleBack}
+              onClick={() => setSearch(null)}
               className="press grid size-8 shrink-0 place-items-center rounded-full bg-surface-raised text-ink-muted outline-none focus-visible:ring-2 focus-visible:ring-red"
             >
               <ChevronLeft className="size-4" />
             </button>
           )}
-          <h2 className="font-display text-2xl text-ink">{STEP_TITLES[step]}</h2>
+          <h2 className="font-display text-2xl text-ink">{title}</h2>
           <button
             type="button"
             aria-label="Close"
@@ -184,19 +187,101 @@ export function ScanSheet({ onClose }: ScanSheetProps) {
           </button>
         </div>
 
-        {/* Step body */}
-        {step === "viewfinder" && (
-          <Viewfinder onCapture={handleCapture} onSkip={handleSkip} />
-        )}
-        {step === "confirm" && rawPhoto && (
-          <ConfirmStep
-            photo={rawPhoto}
-            onRetake={handleRetake}
-            onConfirm={handleConfirm}
+        {/* Body */}
+        {search ? (
+          <CardSearch
+            initialLanguage={searchLanguage()}
+            onPick={handlePick}
+            onCancel={() => setSearch(null)}
+          />
+        ) : view.body === "needsInternet" ? (
+          <>
+            {backToCards}
+            <NeedsInternet />
+          </>
+        ) : view.body === "capture" ? (
+          <>
+            {backToCards}
+            <Viewfinder onCapture={scan.scan} onSkip={findByName} />
+          </>
+        ) : view.body === "scanning" ? (
+          <ScanningSkeleton />
+        ) : view.body === "error" ? (
+          <>
+            {backToCards}
+            <ScanError
+              message={scan.error}
+              onRetry={() => void scan.retry()}
+              onNewPhoto={scan.newPhoto}
+              onFindByName={findByName}
+            />
+          </>
+        ) : (
+          <BatchReview
+            items={scan.items}
+            copiesOf={copiesOf}
+            onChoose={scan.choose}
+            onSearch={(candidateId) => setSearch({ kind: "correct", candidateId })}
+            onRemove={scan.remove}
+            onAddBySearch={() => setSearch({ kind: "add" })}
+            onNewPhoto={scan.newPhoto}
+            onSave={handleSave}
           />
         )}
-        {step === "tag" && <TagForm photo={photo} onSubmit={handleSubmit} />}
       </div>
+    </div>
+  );
+}
+
+/** Big tap back to the review list when reviewed cards are waiting off-screen. */
+function BackToCards({ count, onClick }: { count: number; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="press mb-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gold px-5 py-3 font-semibold text-black outline-none focus-visible:ring-2 focus-visible:ring-red"
+    >
+      <Layers className="size-5" aria-hidden />
+      {count === 1 ? "Back to my 1 card" : `Back to my ${count} cards`}
+    </button>
+  );
+}
+
+/** Offline: scanning needs the Edge Function, so no capture is attempted. */
+function NeedsInternet() {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-2xl bg-surface p-8 text-center" role="status">
+      <WifiOff className="size-10 text-ink-muted" />
+      <p className="font-display text-xl text-ink">Scanning needs the internet</p>
+      <p className="text-sm text-ink-muted">
+        Connect to Wi-Fi, then come back to scan your cards.
+      </p>
+    </div>
+  );
+}
+
+interface ScanErrorProps {
+  message: string | null;
+  onRetry: () => void;
+  onNewPhoto: () => void;
+  onFindByName: () => void;
+}
+
+function ScanError({ message, onRetry, onNewPhoto, onFindByName }: ScanErrorProps) {
+  const buttonClass =
+    "press min-h-11 rounded-full px-6 py-3 font-semibold outline-none focus-visible:ring-2 focus-visible:ring-red";
+  return (
+    <div className="flex flex-col items-center gap-3 text-center" role="alert">
+      <p className="text-ink">{message ?? "Something went wrong."}</p>
+      <button type="button" onClick={onRetry} className={cn(buttonClass, "bg-red text-white")}>
+        Try again
+      </button>
+      <button type="button" onClick={onNewPhoto} className={cn(buttonClass, "bg-surface-raised text-ink")}>
+        Take a new photo
+      </button>
+      <button type="button" onClick={onFindByName} className={cn(buttonClass, "bg-surface-raised text-ink")}>
+        Find cards by name
+      </button>
     </div>
   );
 }

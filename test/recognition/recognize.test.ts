@@ -89,6 +89,50 @@ describe("recognize with the fixture transport", () => {
   });
 });
 
+describe("recognize cancellation", () => {
+  it("never calls the transport when aborted before the image is prepared", async () => {
+    const controller = new AbortController();
+    const transport = { recognize: vi.fn(async () => fixture().recognize({ image: photo(), mode: "batch" })) };
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const slowPrepare = async (image: Blob) => {
+      await gate;
+      return fakePrepare(image);
+    };
+
+    const pending = recognize(photo(), { mode: "batch", transport, prepare: slowPrepare, signal: controller.signal });
+    controller.abort(); // the child closes the sheet while the photo is being prepared
+    release();
+
+    await expect(pending).rejects.toBeInstanceOf(RecognitionError);
+    expect(transport.recognize).not.toHaveBeenCalled();
+  });
+
+  it("never prepares or sends a photo whose scan was already cancelled", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const transport = { recognize: vi.fn() };
+    await expect(
+      recognize(photo(), { mode: "batch", transport, prepare: fakePrepare, signal: controller.signal }),
+    ).rejects.toBeInstanceOf(RecognitionError);
+    expect(fakePrepare).not.toHaveBeenCalled();
+    expect(transport.recognize).not.toHaveBeenCalled();
+  });
+
+  it("hands the signal to the transport so a network request can be aborted", async () => {
+    const controller = new AbortController();
+    const seen: (AbortSignal | undefined)[] = [];
+    const transport: RecognitionTransport = {
+      async recognize(req) {
+        seen.push(req.signal);
+        return fixture().recognize(req);
+      },
+    };
+    await recognize(photo(), { mode: "batch", transport, prepare: fakePrepare, signal: controller.signal });
+    expect(seen).toEqual([controller.signal]);
+  });
+});
+
 describe("recognize rejects untrusted transport responses", () => {
   const exact = recordedPrinting("en", "swsh3-20");
   const card = (imageUrl: string | null) => ({
