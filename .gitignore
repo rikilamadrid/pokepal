@@ -45,3 +45,6 @@ next-env.d.ts
 context/current-ticket.md
 context/handoff.md
 /.pathfinder/
+
+# recognition eval — dry-run reports are local pipeline checks, never committed
+/evals/recognition/reports/*-dry-run.*

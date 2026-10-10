@@ -6,6 +6,7 @@ import {
   createEdgeTransport,
   createFixtureTransport,
   recognize,
+  recognizeCardsEndpoint,
   targetSize,
   type RecognitionTransport,
 } from "@/lib/recognition";
@@ -139,6 +140,21 @@ describe("recognize rejects untrusted transport responses", () => {
     expect(batch.candidates).toHaveLength(1);
   });
 
+  it("accepts a per-card failure reason on an unmatched card (D11)", async () => {
+    const failed = { extracted: recorded.extractions[2], tier: "unmatched", matches: [], failure: "catalog-error" };
+    const batch = await recognize(photo(), { mode: "batch", transport: respond({ cards: [card(null), failed], timings }), prepare: fakePrepare });
+    expect(batch.candidates.map((c) => c.tier)).toEqual(["exact", "unmatched"]);
+  });
+
+  it.each([
+    ["on a matched card", { ...card(null), failure: "catalog-error" }],
+    ["with an unknown reason", { extracted: recorded.extractions[2], tier: "unmatched", matches: [], failure: "oops" }],
+  ])("refuses a failure reason %s", async (_what, bad) => {
+    await expect(
+      recognize(photo(), { mode: "batch", transport: respond({ cards: [bad], timings }), prepare: fakePrepare }),
+    ).rejects.toBeInstanceOf(RecognitionError);
+  });
+
   it("refuses an unmatched card that still lists matches", async () => {
     const transport = respond({
       cards: [{ ...card(null), tier: "unmatched" }],
@@ -166,13 +182,65 @@ describe("recognize wraps transport failures", () => {
   });
 });
 
-describe("edge transport stub", () => {
-  it("fails with RecognitionError and makes no network request", async () => {
+describe("edge transport", () => {
+  const ENDPOINT = "https://project.supabase.co/functions/v1/recognize-cards";
+  const okBody = { cards: [], timings: { uploadMs: 1, modelMs: 2, resolveMs: 3 } };
+
+  function edge(fetchImpl: typeof fetch, token: string | null = "user-jwt") {
+    return createEdgeTransport({ endpoint: ENDPOINT, anonKey: "anon-key", getAccessToken: async () => token, fetch: fetchImpl });
+  }
+
+  it("POSTs the prepared image and mode as multipart with the user's JWT", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response(JSON.stringify(okBody)));
+    const batch = await recognize(photo(), { mode: "trade-check", transport: edge(fetchMock), prepare: fakePrepare });
+    expect(batch.candidates).toEqual([]);
+    expect(batch.timings.modelMs).toBe(2);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(ENDPOINT);
+    expect(init?.method).toBe("POST");
+    expect(init?.headers).toEqual({ Authorization: "Bearer user-jwt", apikey: "anon-key" });
+    const form = init?.body as FormData;
+    expect(form.get("mode")).toBe("trade-check");
+    const image = form.get("image") as Blob;
+    expect(await image.text()).toBe(await (await fakePrepare.mock.results[0].value).text());
+  });
+
+  it("fails before any request when signed out", async () => {
+    const fetchMock = vi.fn();
+    const error = await recognize(photo(), { mode: "batch", transport: edge(fetchMock as typeof fetch, null), prepare: fakePrepare }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RecognitionError);
+    expect((error as Error).message).toMatch(/sign in/i);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("fails without a request when Supabase is not configured", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     await expect(
       recognize(photo(), { mode: "batch", transport: createEdgeTransport(), prepare: fakePrepare }),
     ).rejects.toBeInstanceOf(RecognitionError);
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [401, /sign in again/i],
+    [429, /too many scans/i],
+    [502, /try again/i],
+  ])("turns HTTP %i into a friendly RecognitionError", async (status, message) => {
+    const fetchMock = async () => new Response(JSON.stringify({ error: "x" }), { status });
+    const error = await recognize(photo(), { mode: "batch", transport: edge(fetchMock as typeof fetch), prepare: fakePrepare }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RecognitionError);
+    expect((error as Error).message).toMatch(message);
+  });
+
+  it("still validates what the function returns", async () => {
+    const fetchMock = async () => new Response(JSON.stringify({ ...okBody, photo: "abc" }));
+    await expect(
+      recognize(photo(), { mode: "batch", transport: edge(fetchMock as typeof fetch), prepare: fakePrepare }),
+    ).rejects.toBeInstanceOf(RecognitionError);
+  });
+
+  it("builds the function URL from the project URL", () => {
+    expect(recognizeCardsEndpoint("https://project.supabase.co/")).toBe(ENDPOINT);
   });
 });
 
