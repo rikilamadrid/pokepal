@@ -1,0 +1,82 @@
+[
+  {
+    "id": "seed-7",
+    "ownerId": "",
+    "name": "Tidaltail",
+    "dexNo": "008",
+    "type": "water",
+    "rarity": "holo",
+    "favorite": true,
+    "img": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20200%22%20width%3D%22200%22%20height%3D%22200%22%3E%0A%3Cdefs%3E%3ClinearGradient%20id%3D%22grhlvea%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220.4%22%20y2%3D%221%22%3E%0A%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238fd2ff%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%232f8fe0%22%2F%3E%0A%3C%2FlinearGradient%3E%3C%2Fdefs%3E%0A%3Cpath%20d%3D%22M100%2026c40%200%2066%2030%2066%2066%200%2030-14%2048-34%2062-10%207-20%2016-32%2016s-22-9-32-16c-20-14-34-32-34-62%200-36%2026-66%2066-66Z%22%20fill%3D%22url(%23grhlvea)%22%2F%3E%0A%3Ccircle%20cx%3D%2270%22%20cy%3D%2293%22%20r%3D%229%22%20fill%3D%22%231b1c22%22%2F%3E%0A%3Ccircle%20cx%3D%22130%22%20cy%3D%2293%22%20r%3D%229%22%20fill%3D%22%231b1c22%22%2F%3E%0A%3Ccircle%20cx%3D%2273%22%20cy%3D%2290%22%20r%3D%223%22%20fill%3D%22%23fff%22%2F%3E%0A%3Ccircle%20cx%3D%22133%22%20cy%3D%2290%22%20r%3D%223%22%20fill%3D%22%23fff%22%2F%3E%0A%3Cpath%20d%3D%22M84%20115q16%2016%2032%200%22%20stroke%3D%22%231b1c22%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%20fill%3D%22none%22%2F%3E%0A%3C%2Fsvg%3E",
+    "caughtAt": "2026-07-01T09:00:00.000Z",
+    "updatedAt": "2026-07-01T09:00:00.000Z"
+  },
+  {
+    "id": "card-1751400000000",
+    "ownerId": "6f1c2a9e-3b4d-4e5f-8a7b-9c0d1e2f3a4b",
+    "name": "Sparkit",
+    "dexNo": "025",
+    "type": "electric",
+    "rarity": "uncommon",
+    "favorite": false,
+    "img": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=",
+    "caughtAt": "2026-07-01T20:00:00.000Z",
+    "updatedAt": "2026-07-02T08:15:30.250Z"
+  },
+  {
+    "id": "card-1751410000000",
+    "ownerId": "6f1c2a9e-3b4d-4e5f-8a7b-9c0d1e2f3a4b",
+    "name": "Cindermaw",
+    "dexNo": "059",
+    "type": "fire",
+    "rarity": "rare",
+    "favorite": true,
+    "img": "https://example.supabase.co/storage/v1/object/sign/card-images/6f1c2a9e-3b4d-4e5f-8a7b-9c0d1e2f3a4b/card-1751410000000.jpg?token=recorded",
+    "caughtAt": "2026-07-01T22:46:40+00:00",
+    "updatedAt": "2026-07-01T22:46:40.123456+00:00"
+  },
+  null,
+  42,
+  "seed-1",
+  [
+    "not",
+    "a",
+    "card"
+  ],
+  {},
+  {
+    "id": "blank-name",
+    "name": "   ",
+    "dexNo": "001",
+    "type": "fire"
+  },
+  {
+    "id": "card-repair",
+    "ownerId": 7,
+    "name": "  Mossling  ",
+    "dexNo": " 010 ",
+    "type": "dragon",
+    "rarity": "mythic",
+    "favorite": "yes",
+    "img": "",
+    "caughtAt": "not-a-date",
+    "updatedAt": null
+  },
+  {
+    "name": "Glimmox",
+    "dexNo": "063",
+    "type": "psychic",
+    "rarity": "holo",
+    "favorite": false,
+    "img": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=",
+    "caughtAt": "2026-07-02T10:00:00.000Z",
+    "updatedAt": "2026-07-02T10:00:00.000Z"
+  },
+  {
+    "id": "card-no-updated",
+    "ownerId": "",
+    "name": "Pebblor",
+    "type": "rock",
+    "caughtAt": "2026-06-30T12:00:00.000Z"
+  }
+]
