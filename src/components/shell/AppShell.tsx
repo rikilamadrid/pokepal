@@ -10,10 +10,18 @@ import { CollectionScreen } from "@/components/screens/CollectionScreen";
 import { FavoritesScreen } from "@/components/screens/FavoritesScreen";
 import { SettingsScreen } from "@/components/screens/SettingsScreen";
 import type { Card } from "@/types/card";
+import type { PrintingGroup } from "@/lib/collection-utils";
 
 // Lazy-loaded: the detail sheet isn't needed on first paint.
 const CardDetailSheet = dynamic(
   () => import("@/components/card/CardDetailSheet").then((m) => m.CardDetailSheet),
+  { ssr: false },
+);
+
+// Lazy-loaded: the 2.0 printing detail sheet isn't needed on first paint.
+const PrintingDetailSheet = dynamic(
+  () =>
+    import("@/components/card/PrintingDetailSheet").then((m) => m.PrintingDetailSheet),
   { ssr: false },
 );
 
@@ -22,6 +30,11 @@ const ScanSheet = dynamic(
   () => import("@/components/scan/ScanSheet").then((m) => m.ScanSheet),
   { ssr: false },
 );
+
+/** The card whose detail sheet is open: a legacy card or a 2.0 printing. */
+type Selection =
+  | { kind: "legacy"; cardId: string }
+  | { kind: "printing"; printingId: string };
 
 /**
  * Fixed, phone-shaped app frame and client-side navigator. Owns the active tab,
@@ -32,11 +45,19 @@ export function AppShell() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [scanOpen, setScanOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<Selection | null>(null);
   const screenRefs = useRef<Partial<Record<Tab, HTMLDivElement | null>>>({});
 
-  const openCard = useCallback((card: Card) => setSelectedCardId(card.id), []);
-  const closeCard = useCallback(() => setSelectedCardId(null), []);
+  const openCard = useCallback(
+    (card: Card) => setSelection({ kind: "legacy", cardId: card.id }),
+    [],
+  );
+  const openPrinting = useCallback(
+    (group: PrintingGroup) =>
+      setSelection({ kind: "printing", printingId: group.printing.id }),
+    [],
+  );
+  const closeCard = useCallback(() => setSelection(null), []);
 
   const selectTab = useCallback(
     (tab: Tab) => {
@@ -64,11 +85,16 @@ export function AppShell() {
     home: (
       <HomeScreen
         onSelectCard={openCard}
+        onSelectPrinting={openPrinting}
         onSeeAllFavorites={() => selectTab("favorites")}
       />
     ),
-    collection: <CollectionScreen onSelectCard={openCard} />,
-    favorites: <FavoritesScreen onSelectCard={openCard} />,
+    collection: (
+      <CollectionScreen onSelectCard={openCard} onSelectPrinting={openPrinting} />
+    ),
+    favorites: (
+      <FavoritesScreen onSelectCard={openCard} onSelectPrinting={openPrinting} />
+    ),
     settings: <SettingsScreen />,
   };
 
@@ -105,8 +131,11 @@ export function AppShell() {
       </div>
 
       {scanOpen && <ScanSheet onClose={() => setScanOpen(false)} />}
-      {selectedCardId && (
-        <CardDetailSheet cardId={selectedCardId} onClose={closeCard} />
+      {selection?.kind === "legacy" && (
+        <CardDetailSheet cardId={selection.cardId} onClose={closeCard} />
+      )}
+      {selection?.kind === "printing" && (
+        <PrintingDetailSheet printingId={selection.printingId} onClose={closeCard} />
       )}
     </div>
   );

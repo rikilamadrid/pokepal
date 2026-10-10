@@ -1,41 +1,40 @@
-import type { Card } from "@/types/card";
-import { CardTile } from "@/components/card/CardTile";
-
-interface CardRowProps {
+interface CardRowProps<T> {
   label: string;
-  cards: Card[];
-  /** Duplicate count per dex number for the ×N badge. */
-  dupCount?: (dexNo: string) => number | undefined;
-  onSelectCard?: (card: Card) => void;
+  items: readonly T[];
+  itemKey: (item: T) => string;
+  renderItem: (item: T) => React.ReactNode;
+  /** Optional secondary line under the label (e.g. what "Old cards" means). */
+  description?: string;
   /** Optional "See all" affordance (e.g. Favorites → its tab). */
   onSeeAll?: () => void;
-  /** Shown in place of the row when there are no cards. */
+  /** Shown in place of the row when there are no items. */
   emptyHint: string;
 }
 
 /**
  * Home's horizontal-scroll card strip: eyebrow label + count pill, an optional
- * "See all" link, and a momentum row of {@link CardTile}s (hidden scrollbar,
- * edge padding). Falls back to a friendly hint when empty.
+ * "See all" link, and a momentum row of tiles (hidden scrollbar, edge
+ * padding). Falls back to a friendly hint when empty.
  */
-export function CardRow({
+export function CardRow<T>({
   label,
-  cards,
-  dupCount,
-  onSelectCard,
+  items,
+  itemKey,
+  renderItem,
+  description,
   onSeeAll,
   emptyHint,
-}: CardRowProps) {
+}: CardRowProps<T>) {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between px-5">
         <div className="flex items-center gap-2">
           <span className="eyebrow">{label}</span>
           <span className="grid min-w-5 place-items-center rounded-full bg-surface-raised px-1.5 font-mono text-[0.62rem] text-ink-muted">
-            {cards.length}
+            {items.length}
           </span>
         </div>
-        {onSeeAll && cards.length > 0 && (
+        {onSeeAll && items.length > 0 && (
           <button
             type="button"
             onClick={onSeeAll}
@@ -45,18 +44,15 @@ export function CardRow({
           </button>
         )}
       </div>
+      {description && <p className="-mt-2 px-5 text-xs text-ink-muted">{description}</p>}
 
-      {cards.length === 0 ? (
+      {items.length === 0 ? (
         <p className="px-5 text-sm text-ink-muted">{emptyHint}</p>
       ) : (
         <div className="hide-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
-          {cards.map((c) => (
-            <div key={c.id} className="w-28 shrink-0">
-              <CardTile
-                card={c}
-                duplicateCount={dupCount?.(c.dexNo)}
-                onSelect={onSelectCard}
-              />
+          {items.map((item) => (
+            <div key={itemKey(item)} className="w-28 shrink-0">
+              {renderItem(item)}
             </div>
           ))}
         </div>

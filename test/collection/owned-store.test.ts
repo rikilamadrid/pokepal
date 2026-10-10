@@ -316,13 +316,14 @@ describe("dev seed", () => {
       charizardChampionsPath,
       printingFrom("/ja/cards/SV2a-006", "ja"),
       printingFrom("/en/cards/swsh1-178", "en"),
+      printingFrom("/en/cards/30th-c-001", "en"),
     ]);
   });
 
   it("produces a valid batch with one ×3 printing", () => {
     const { state } = addOwnedCardsTo(EMPTY_OWNED_STATE, [...DEV_OWNED_SEED]);
-    expect(state.owned).toHaveLength(7);
+    expect(state.owned).toHaveLength(8);
     expect(printingDuplicates(state.owned)).toEqual(new Map([[charizardEn.id, 3]]));
-    expect(Object.keys(state.printings)).toHaveLength(5);
+    expect(Object.keys(state.printings)).toHaveLength(6);
   });
 });
