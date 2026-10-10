@@ -14,6 +14,7 @@ import type { Card } from "@/types/card";
 import { getSupabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useCollection } from "@/hooks/useCollection";
+import { useOwnedSync } from "@/hooks/useOwnedSync";
 import { reconcile } from "@/lib/sync";
 import {
   cardToRow,
@@ -48,6 +49,8 @@ const CHANGE_DEBOUNCE_MS = 1500;
 export function SyncProvider({ children }: { children: React.ReactNode }) {
   const { configured, user } = useAuth();
   const { cards, tombstones, applySync } = useCollection();
+  // PokéPal 2.0 owned cards sync on their own (owned_cards); legacy below is unchanged.
+  useOwnedSync();
 
   const [status, setStatus] = useState<SyncStatus>("idle");
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);

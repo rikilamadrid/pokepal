@@ -35,3 +35,26 @@ model Card {
   @@index([ownerId, dexNo])
   @@map("cards")
 }
+
+/// PokéPal 2.0 — one physical copy of a verified catalog printing. Mirrors the
+/// client `OwnedCard` contract (src/types/collection.ts) plus a `printing`
+/// snapshot so another device can render the copy offline. Additive: the legacy
+/// `cards` table is untouched. RLS lives in `prisma/owned-cards-rls.sql`.
+/// Rollback: drop this table (no legacy data is touched).
+model OwnedCard {
+  id                String    @id @db.Uuid
+  ownerId           String    @map("owner_id") @db.Uuid
+  printingId        String    @map("printing_id")
+  printing          Json
+  finish            String?
+  favorite          Boolean   @default(false)
+  source            String
+  acquiredAt        DateTime  @map("acquired_at") @db.Timestamptz(6)
+  storageLocationId String?   @map("storage_location_id")
+  updatedAt         DateTime  @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([ownerId])
+  @@index([ownerId, printingId])
+  @@map("owned_cards")
+}
