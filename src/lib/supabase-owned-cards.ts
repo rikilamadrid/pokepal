@@ -54,17 +54,41 @@ export const ownedCardRowSchema: z.ZodType<OwnedCardRow> = z
     path: ["printing", "imageUrl"],
   });
 
+/** Result of reading `owned_cards`: valid rows plus ids of rows that failed validation. */
+export interface ParsedOwnedRows {
+  rows: OwnedCardRow[];
+  /**
+   * Ids of rows this client cannot read (e.g. written by a newer app version).
+   * They still exist in the cloud, so sync must not overwrite them.
+   */
+  unreadableIds: string[];
+}
+
+/** Read a row's `id` without trusting the rest of it. */
+function readRowId(item: unknown): string | null {
+  if (typeof item !== "object" || item === null) return null;
+  const id = (item as { id?: unknown }).id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+
 /**
  * Keep only rows that validate. Invalid rows are skipped rather than failing the
- * whole sync, so one bad row never blocks the rest of the collection.
+ * whole sync, so one bad row never blocks the rest of the collection; their ids
+ * are reported so the push side treats them as present.
  */
-export function parseOwnedRows(data: readonly unknown[]): OwnedCardRow[] {
+export function parseOwnedRows(data: readonly unknown[]): ParsedOwnedRows {
   const rows: OwnedCardRow[] = [];
+  const unreadableIds: string[] = [];
   for (const item of data) {
     const result = ownedCardRowSchema.safeParse(item);
-    if (result.success) rows.push(result.data);
+    if (result.success) {
+      rows.push(result.data);
+    } else {
+      const id = readRowId(item);
+      if (id) unreadableIds.push(id);
+    }
   }
-  return rows;
+  return { rows, unreadableIds };
 }
 
 /** Map a DB row to the client `OwnedCard` (the printing snapshot is returned separately). */
@@ -121,7 +145,7 @@ const MISSING_TABLE_CODES = new Set(["PGRST205", "42P01"]);
 export async function fetchOwnedRows(
   supabase: SupabaseClient,
   ownerId: string,
-): Promise<OwnedCardRow[]> {
+): Promise<ParsedOwnedRows> {
   const { data, error } = await supabase
     .from(OWNED_CARDS_TABLE)
     .select("*")

@@ -13,6 +13,7 @@ import {
   resetForOwner,
   toOwnedSyncChanges,
 } from "@/lib/owned-sync";
+import { runOwnedSyncRound } from "@/lib/owned-sync-round";
 import {
   fetchOwnedRows,
   OwnedCardsUnavailableError,
@@ -82,7 +83,10 @@ describe("row mappers", () => {
       printing: { ...printing, imageUrl: "data:image/jpeg;base64,AAAA" },
     });
     const badSource = { ...row(copy(), ALICE), source: "stolen" };
-    expect(parseOwnedRows([good, mismatch, inline, badSource, null])).toEqual([good]);
+    expect(parseOwnedRows([good, mismatch, inline, badSource, null, { id: 7 }])).toEqual({
+      rows: [good],
+      unreadableIds: [mismatch.id, inline.id, badSource.id],
+    });
   });
 });
 
@@ -328,6 +332,167 @@ describe("fetchOwnedRows", () => {
     const good = row(copy(), ALICE);
     await expect(
       fetchOwnedRows(client({ data: [good, { id: "x" }], error: null }), ALICE),
-    ).resolves.toEqual([good]);
+    ).resolves.toEqual({ rows: [good], unreadableIds: ["x"] });
+  });
+});
+
+/**
+ * A row this client cannot validate (e.g. written by a newer app version with a
+ * new printing field or finish value) still exists in the cloud. Its state is
+ * unknown, so it must count as present: never overwrite or resurrect it.
+ */
+describe("unreadable remote rows", () => {
+  function unreadable(card: OwnedCard, overrides: Partial<OwnedCardRow>): unknown {
+    return { ...row(card, ALICE, overrides), finish: "galaxy-foil" };
+  }
+
+  it("a newer remote soft-delete it cannot read is not undone", () => {
+    const local = copy({ ownerId: ALICE, updatedAt: T1 });
+    const { rows, unreadableIds } = parseOwnedRows([
+      unreadable(local, { updated_at: T3, deleted_at: T3 }),
+    ]);
+    expect(rows).toEqual([]);
+    const plan = reconcileOwnedCards([local], {}, rows, ALICE, unreadableIds);
+    expect(plan.pushCards).toEqual([]);
+    expect(plan.pushDeletes).toEqual([]);
+    expect(plan.localDeletes).toEqual({});
+    expect(plan.localUpsertRows).toEqual([]);
+  });
+
+  it("a newer remote edit it cannot read is not overwritten", () => {
+    const local = copy({ ownerId: ALICE, updatedAt: T1, favorite: false });
+    const { rows, unreadableIds } = parseOwnedRows([
+      unreadable(local, { updated_at: T3, favorite: true }),
+    ]);
+    const plan = reconcileOwnedCards([local], {}, rows, ALICE, unreadableIds);
+    expect(plan.pushCards).toEqual([]);
+    expect(buildPushRows(plan.pushCards, { [printing.id]: printing }, ALICE)).toEqual([]);
+  });
+
+  it("a local release of an unreadable row is not pushed", () => {
+    const released = copy({ ownerId: ALICE });
+    const { rows, unreadableIds } = parseOwnedRows([unreadable(released, { updated_at: T1 })]);
+    const plan = reconcileOwnedCards([], { [released.id]: T2 }, rows, ALICE, unreadableIds);
+    expect(plan.pushDeletes).toEqual([]);
+  });
+
+  it("valid rows in the same batch still reconcile normally", () => {
+    const blocked = copy({ ownerId: ALICE, updatedAt: T1 });
+    const newerLocal = copy({ ownerId: ALICE, updatedAt: T3 });
+    const newerRemote = copy({ ownerId: ALICE, updatedAt: T1 });
+    const released = copy({ ownerId: ALICE });
+    const localOnly = copy();
+    const { rows, unreadableIds } = parseOwnedRows([
+      unreadable(blocked, { updated_at: T3, deleted_at: T3 }),
+      row(newerLocal, ALICE, { updated_at: T1 }),
+      row(newerRemote, ALICE, { updated_at: T2 }),
+      row(released, ALICE, { updated_at: T1 }),
+    ]);
+    expect(unreadableIds).toEqual([blocked.id]);
+    const plan = reconcileOwnedCards(
+      [blocked, newerLocal, newerRemote, localOnly],
+      { [released.id]: T2 },
+      rows,
+      ALICE,
+      unreadableIds,
+    );
+    expect(plan.pushCards).toEqual([newerLocal, localOnly]);
+    expect(plan.localUpsertRows.map((r) => r.id)).toEqual([newerRemote.id]);
+    expect(plan.pushDeletes).toEqual([{ id: released.id, deletedAt: T2 }]);
+  });
+});
+
+describe("runOwnedSyncRound (account switch mid-flight)", () => {
+  interface Calls {
+    upserts: OwnedCardRow[][];
+    deletes: string[];
+  }
+
+  /** Fake client whose fetch resolves only when `release` is called. */
+  function delayedClient(remote: unknown[]): {
+    supabase: SupabaseClient;
+    calls: Calls;
+    release: () => void;
+  } {
+    const calls: Calls = { upserts: [], deletes: [] };
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const ok = Promise.resolve({ error: null });
+    const table = {
+      select: () => ({
+        eq: async () => {
+          await gate;
+          return { data: remote, error: null };
+        },
+      }),
+      upsert: (rows: OwnedCardRow[]) => {
+        calls.upserts.push(rows);
+        return ok;
+      },
+      update: () => ({
+        eq: (_col: string, id: string) => ({
+          eq: () => {
+            calls.deletes.push(id);
+            return ok;
+          },
+        }),
+      }),
+    };
+    return { supabase: { from: () => table } as unknown as SupabaseClient, calls, release };
+  }
+
+  it("stops without pushing or returning changes when the owner changed during the fetch", async () => {
+    const unclaimed = copy();
+    const { supabase, calls, release } = delayedClient([]);
+    let signedIn = ALICE;
+    const round = runOwnedSyncRound({
+      supabase,
+      ownerId: ALICE,
+      state: stateOf([unclaimed]),
+      isCurrentOwner: () => signedIn === ALICE,
+    });
+    signedIn = BOB;
+    release();
+    await expect(round).resolves.toBeNull();
+    expect(calls.upserts).toEqual([]);
+  });
+
+  it("returns no changes when the owner changed during the push", async () => {
+    const unclaimed = copy();
+    const { supabase, calls, release } = delayedClient([]);
+    let signedIn = ALICE;
+    release();
+    const round = runOwnedSyncRound({
+      supabase,
+      ownerId: ALICE,
+      state: stateOf([unclaimed]),
+      isCurrentOwner: () => {
+        const current = signedIn === ALICE;
+        // Flip after the fetch check, so the switch lands while upserting.
+        if (calls.upserts.length === 0) return current;
+        signedIn = BOB;
+        return false;
+      },
+    });
+    await expect(round).resolves.toBeNull();
+    expect(calls.upserts).toHaveLength(1);
+  });
+
+  it("returns the local changes when the owner is unchanged", async () => {
+    const unclaimed = copy();
+    const released = copy({ ownerId: ALICE });
+    const { supabase, calls, release } = delayedClient([row(released, ALICE, { updated_at: T1 })]);
+    release();
+    const changes = await runOwnedSyncRound({
+      supabase,
+      ownerId: ALICE,
+      state: stateOf([unclaimed], { [released.id]: T2 }),
+      isCurrentOwner: () => true,
+    });
+    expect(changes?.claimedIds).toEqual([unclaimed.id]);
+    expect(calls.upserts[0].map((r) => r.owner_id)).toEqual([ALICE]);
+    expect(calls.deletes).toEqual([released.id]);
   });
 });

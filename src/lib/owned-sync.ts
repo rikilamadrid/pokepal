@@ -38,16 +38,28 @@ export function isEligibleForOwner(card: OwnedCard, ownerId: string): boolean {
  * Last-writer-wins reconciliation of local copies against `ownerId`'s rows,
  * behind the owner guard: foreign local copies are excluded from the push set,
  * and foreign remote rows are ignored.
+ *
+ * `unreadableIds` are rows that exist in the cloud but failed validation. Their
+ * state (a newer edit or soft-delete) is unknown, so nothing is pushed for them
+ * and the local copy is left untouched.
  */
 export function reconcileOwnedCards(
   local: readonly OwnedCard[],
   tombstones: Tombstones,
   remote: readonly OwnedCardRow[],
   ownerId: string,
+  unreadableIds: readonly string[] = [],
 ): OwnedSyncPlan {
   const eligible = local.filter((card) => isEligibleForOwner(card, ownerId));
   const own = remote.filter((row) => row.owner_id === ownerId);
-  return reconcileRecords(eligible, tombstones, own, OWNED_ACCESSORS);
+  const plan = reconcileRecords(eligible, tombstones, own, OWNED_ACCESSORS);
+  if (unreadableIds.length === 0) return plan;
+  const unreadable = new Set(unreadableIds);
+  return {
+    ...plan,
+    pushCards: plan.pushCards.filter((card) => !unreadable.has(card.id)),
+    pushDeletes: plan.pushDeletes.filter((del) => !unreadable.has(del.id)),
+  };
 }
 
 /**

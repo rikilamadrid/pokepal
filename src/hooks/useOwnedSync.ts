@@ -5,19 +5,9 @@ import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useOwnedCollection } from "@/hooks/useOwnedCollection";
-import {
-  buildPushRows,
-  hasOwnedSyncChanges,
-  reconcileOwnedCards,
-  resetForOwner,
-  toOwnedSyncChanges,
-} from "@/lib/owned-sync";
-import {
-  fetchOwnedRows,
-  markOwnedRowDeleted,
-  OwnedCardsUnavailableError,
-  upsertOwnedRows,
-} from "@/lib/supabase-owned-cards";
+import { hasOwnedSyncChanges } from "@/lib/owned-sync";
+import { runOwnedSyncRound } from "@/lib/owned-sync-round";
+import { OwnedCardsUnavailableError } from "@/lib/supabase-owned-cards";
 import type { OwnedState } from "@/lib/owned-cards";
 
 /** Debounce window for syncing after a local mutation. */
@@ -66,17 +56,14 @@ export function useOwnedSync(): void {
     running.current = true;
 
     try {
-      const state = resetForOwner(stateRef.current, ownerId);
-      const remote = await fetchOwnedRows(supabase, ownerId);
-      const plan = reconcileOwnedCards(state.owned, state.tombstones, remote, ownerId);
-
-      const pushRows = buildPushRows(plan.pushCards, state.printings, ownerId);
-      await upsertOwnedRows(supabase, pushRows);
-      for (const del of plan.pushDeletes) {
-        await markOwnedRowDeleted(supabase, ownerId, del.id, del.deletedAt);
-      }
-
-      const changes = toOwnedSyncChanges(plan, pushRows, ownerId);
+      const changes = await runOwnedSyncRound({
+        supabase,
+        ownerId,
+        state: stateRef.current,
+        isCurrentOwner: () => userIdRef.current === ownerId,
+      });
+      // null: the signed-in user changed mid-flight; the new owner's run takes over.
+      if (!changes) return;
       if (hasOwnedSyncChanges(changes)) applySync(changes);
       toast.dismiss(ERROR_TOAST_ID);
     } catch (err) {
@@ -90,7 +77,9 @@ export function useOwnedSync(): void {
       running.current = false;
       if (dirty.current) {
         dirty.current = false;
-        void runSyncRef.current();
+        // Next task, so the rerun plans from the committed state (stateRef is
+        // written in an effect after React commits this run's applySync).
+        setTimeout(() => void runSyncRef.current(), 0);
       }
     }
   }, [configured, applySync, resetOwner]);
